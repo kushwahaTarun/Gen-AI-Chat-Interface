@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "configcat-react": "^4.9.0",
+    "flowbite-react": "^0.12.5",
     "motion": "^12.23.12",
     "next": "15.4.5",
     "react": "19.1.0",

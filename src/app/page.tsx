@@ -1,7 +1,15 @@
 "use client";
 import Image from "next/image";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { LuCopy } from "react-icons/lu";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
+import { RxSpeakerLoud } from "react-icons/rx";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -20,9 +28,12 @@ import type { User } from "firebase/auth";
 import SignInPage from "@/app/Signin/page";
 import user from "../../public/user.png";
 import AI2 from "../../public/AI2.png";
+import RotatingIcon from "./components/RotatingIcon";
 import TextareaWithButtons from "./components/TextareaWithButtons";
 import {
   setUserCurrentMessage,
+  setIsResponseStreaming,
+  setCurrentConversationId,
   setMessages,
 } from "@/features/chatInterfaceSlice";
 import toast from "react-hot-toast";
@@ -33,26 +44,23 @@ const auth = getAuth();
 export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // creating a reference to the AbortController
+  const controllerRef = useRef<AbortController | null>(null);
+
   // accessing the state from redux
-  const { userSelectedLLMModelId, userCurrentMessage, messages } = useSelector(
-    (state: any) => state.chat
-  );
+  const {
+    userSelectedLLMModelId,
+    userCurrentMessage,
+    isResponseStreaming,
+    currentConversationId,
+    messages,
+  } = useSelector((state: any) => state.chat);
 
   // creating a dispatch function to dispatch actions to the redux store
   const dispatch = useDispatch();
 
   // state that will store the details of the logged-in user
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
-
-  // state to manage the response streaming
-  const [isResponseStreaming, setIsResponseStreaming] =
-    useState<boolean>(false);
-
-  console.warn("messages", messages);
-
-  // Current conversation ID - you might want to make this dynamic
-  const [currentConversationId, setCurrentConversationId] =
-    useState<string>("");
 
   // Scroll to the bottom of the messages container
   const scrollToBottom = () => {
@@ -78,7 +86,7 @@ export default function Home() {
 
   // Generate new conversation ID when component mounts or when starting new chat
   useEffect(() => {
-    setCurrentConversationId("chat-" + Date.now());
+    dispatch(setCurrentConversationId("chat-" + Date.now()));
   }, []);
 
   // triggers once the component is mounted on the screen
@@ -260,6 +268,40 @@ export default function Home() {
     }
   }
 
+  // Function to handle text-to-speech
+  const handleSpeak = (message: string) => {
+    console.warn("handleSpeak called with message:", message);
+
+    if (!message) return;
+
+    // Check if speech synthesis is supported
+    const speech = new SpeechSynthesisUtterance(message);
+    console.warn("speech", speech);
+
+    // Optional settings
+    speech.rate = 1; // Speed (0.1 to 10)
+    speech.pitch = 1; // Pitch (0 to 2)
+    speech.volume = 1; // Volume (0 to 1)
+
+    // Select a voice (optional)
+    const voices = window.speechSynthesis.getVoices();
+    console.warn("voices", voices);
+
+    if (voices.length > 0) {
+      speech.voice =
+        voices.find((voice) => voice.lang === "en-US") || voices[0];
+    }
+
+    window.speechSynthesis.speak(speech);
+  };
+
+  // triggers when the user clicks on the stop streaming button
+  const stopStream = () => {
+    controllerRef.current?.abort();
+    controllerRef.current = null;
+    dispatch(setIsResponseStreaming(false));
+  };
+
   // triggers when the user submits a query
   const handleQuerySubmit = async () => {
     if (!loggedInUser || !userCurrentMessage?.content) {
@@ -269,12 +311,17 @@ export default function Home() {
       return;
     }
 
-    console.warn("userCurrentMessage", userCurrentMessage);
+    // Cleanup any prior controller
+    controllerRef.current?.abort();
 
     // Set streaming state to true
-    setIsResponseStreaming(true);
+    dispatch(setIsResponseStreaming(true));
 
     try {
+      // creating a new AbortController instance
+      const controller = new AbortController();
+      controllerRef.current = controller; // Store the controller reference
+
       // clearing the current textarea input
       dispatch(
         setUserCurrentMessage({
@@ -312,6 +359,7 @@ export default function Home() {
           model: userSelectedLLMModelId, // passing the selected model id to an api
           messages: [...messages, userCurrentMessage],
         }),
+        signal: controller.signal, // attach signal
         headers: {
           "Content-Type": "application/json",
         },
@@ -328,6 +376,9 @@ export default function Home() {
         const { done, value } = await reader?.read();
 
         if (done) {
+          // Stream ended normally
+          controllerRef.current = null;
+
           // Mark bot message as complete in Firestore
           await updateBotMessage(
             loggedInUser.uid,
@@ -344,7 +395,7 @@ export default function Home() {
             fullResponse
           );
 
-          setIsResponseStreaming(false);
+          dispatch(setIsResponseStreaming(false));
           break;
         }
 
@@ -418,7 +469,7 @@ export default function Home() {
                 fullResponse
               );
 
-              setIsResponseStreaming(false);
+              dispatch(setIsResponseStreaming(false));
               break;
             }
           } catch (parseError) {
@@ -432,8 +483,13 @@ export default function Home() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (err: unknown) {
+      // If the error is an AbortError, we can ignore it
+      if (err.name === "AbortError") {
+        return;
+      }
+
       // Set streaming state to false on error
-      setIsResponseStreaming(false);
+      dispatch(setIsResponseStreaming(false));
 
       // handling any errors that occur during the API call
       if (err instanceof Error) {
@@ -450,7 +506,7 @@ export default function Home() {
   const startNewConversation = () => {
     setCurrentConversationId("chat-" + Date.now());
     dispatch(setMessages([]));
-    setIsResponseStreaming(false);
+    dispatch(setIsResponseStreaming(false));
   };
 
   // if the user is not logged in, return the SignInPage component
@@ -465,63 +521,42 @@ export default function Home() {
         className="w-full h-screen flex justify-center items-center relative overflow-hidden"
         style={{
           background: `
-            radial-gradient(ellipse at top, rgba(30, 41, 59, 0.3) 0%, transparent 70%),
-            linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)
+            radial-gradient(ellipse at top, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+            linear-gradient(135deg, #0a0a0a 0%, #111111 25%, #1a1a1a 50%, #0f0f0f 100%)
           `,
         }}
       >
-        {/* Profile icon on the page */}
-        <Image
-          id="dropdownUserAvatarButton"
-          className="absolute top-2 right-2 cursor-pointer z-50"
-          data-dropdown-toggle="dropdownAvatar"
-          src={user}
-          height={40}
-          onClick={() => signOut(auth)}
-          alt="profile icon"
-        />
-
-        {/* New conversation button */}
-        <button
-          onClick={startNewConversation}
-          className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg z-50 transition-colors"
-        >
-          New Chat
-        </button>
-
-        {/* Animated overlay */}
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background: `
-              linear-gradient(
-                45deg,
-                #1e1b4b,
-                #312e81,
-                #1e293b,
-                #0f172a,
-                #1e1b4b
-              )
-            `,
-            backgroundSize: "400% 400%",
-            animation: "gradientShift 8s ease-in-out infinite",
-          }}
-        />
+        {/* Animated floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-20 animate-pulse"></div>
+          <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-purple-400 rounded-full opacity-30 animate-pulse delay-1000"></div>
+          <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-25 animate-pulse delay-2000"></div>
+        </div>
 
         {/* Stores the page content and also the textarea for the user query */}
         <section
-          className={`flex transition flex-col items-center justify-around relative z-10 w-[70%]  ${
+          className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-[70%] ${
             messages.length ? "h-[85%]" : "h-[70%]"
           }`}
         >
           {/* Container that stores the icon, headings and the textarea field */}
           {!messages.length && (
-            <div className="flex flex-col items-center justify-center">
-              <Image className="border" src={AI2} alt="AI icon" />
-              <h3 className="text-gray-400 text-xl mt-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="relative">
+                <Image
+                  className="border-2 border-gray-700 rounded-full shadow-2xl"
+                  src={AI2}
+                  alt="AI icon"
+                  width={120}
+                  height={120}
+                />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-500/20 to-purple-500/20"></div>
+              </div>
+              <h3 className="text-gray-300 text-xl mt-8 font-light">
                 Welcome to Baangdu AI
               </h3>
-              <h1 className="text-white text-5xl mt-4 font-semibold">
+              <h1 className="text-white text-5xl mt-4 font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 How can I help?
               </h1>
             </div>
@@ -529,29 +564,193 @@ export default function Home() {
 
           {/* Display messages if there are any */}
           {messages.length > 0 && (
-            <div className="w-full max-w-4xl flex-1 overflow-y-auto mb-4 p-4 rounded-lg">
-              {/* Messages will show streaming automatically via Firestore listener */}
-              {messages.map((message: any, index: number) => (
-                <div
-                  key={message.id || index}
-                  className={`mb-4 ${
-                    message.role === "assistant" ? "text-left" : "text-right"
-                  }`}
-                >
-                  <div
-                    className={`inline-block p-3 rounded-lg max-w-xs lg:max-w-md ${
-                      message.role === "assistant"
-                        ? "bg-gray-700 text-white"
-                        : "bg-blue-600 text-white"
+            <div className="w-full max-w-4xl flex-1 overflow-y-auto mb-6 p-4 rounded-xl custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {/* Messages will show streaming automatically via Firestore listener */}
+                {messages.map((message: any, index: number) => (
+                  <motion.div
+                    key={message.id || index}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{
+                      duration: 0.4,
+                      ease: "easeOut",
+                    }}
+                    className={`mb-6 w-full flex flex-col ${
+                      message.role === "user"
+                        ? "justify-end" // User messages aligned to the right
+                        : "justify-start" // Assistant messages aligned to the left
                     }`}
                   >
-                    {message.content}
-                    {message.role === "assistant" && !message.isComplete && (
-                      <span className="animate-pulse ml-1">▋</span>
+                    <div
+                      className={`flex items-end gap-3 max-w-[100%] ${
+                        message.role === "user"
+                          ? "flex-row-reverse" // User: avatar on right, message on left
+                          : "flex-row" // Assistant: avatar on left, message on right
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                          delay: 0.1,
+                        }}
+                        className="flex-shrink-0 mb-1"
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            message.role === "assistant"
+                              ? "bg-gradient-to-br from-slate-600 to-slate-700 border border-slate-500/50"
+                              : "bg-gradient-to-br from-blue-500 to-indigo-600 border border-blue-400/50"
+                          }`}
+                        >
+                          {message.role === "assistant" ? (
+                            <Image
+                              src={AI2}
+                              alt="AI"
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                          ) : (
+                            <Image
+                              src={user}
+                              alt="User"
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                          )}
+                        </div>
+                      </motion.div>
+
+                      {/* Message Bubble */}
+                      <motion.div
+                        initial={{
+                          opacity: 0,
+                          scale: 0.3,
+                          x: message.role === "user" ? 30 : -30,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          scale: 1,
+                          x: 0,
+                        }}
+                        whileHover={{
+                          scale: 1.02,
+                        }}
+                        whileTap={{
+                          scale: 0.98,
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 30,
+                          mass: 1,
+                        }}
+                        className={`inline-block p-4 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer ${
+                          message.role === "assistant"
+                            ? "bg-gradient-to-br from-slate-800/80 to-slate-900/90 backdrop-blur-sm border border-slate-600/30 text-slate-100 shadow-slate-900/50 rounded-bl-md"
+                            : "bg-gradient-to-br from-blue-500/90 to-indigo-600/90 backdrop-blur-sm border border-blue-400/20 text-white shadow-blue-500/30 rounded-br-md"
+                        }`}
+                      >
+                        <motion.div
+                          className="whitespace-pre-wrap break-words"
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            delay: 0.2,
+                            duration: 0.3,
+                          }}
+                        >
+                          <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              code({
+                                node,
+                                inline,
+                                className,
+                                children,
+                                ...props
+                              }) {
+                                const match = /language-(\w+)/.exec(
+                                  className || ""
+                                );
+                                return !inline && match ? (
+                                  <SyntaxHighlighter
+                                    language={match[1]}
+                                    style={coldarkDark}
+                                    PreTag="div"
+                                    {...props}
+                                  >
+                                    {String(children).replace(/\n$/, "")}
+                                  </SyntaxHighlighter>
+                                ) : (
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                );
+                              },
+                            }}
+                          >
+                            {message.content}
+                          </Markdown>
+                        </motion.div>
+                        {message.role === "assistant" &&
+                          !message.isComplete && (
+                            <motion.span
+                              className="ml-2 inline-block"
+                              initial={{ opacity: 0, scale: 0 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                                delay: 0.3,
+                              }}
+                            >
+                              <RotatingIcon
+                                isRotating={true}
+                                variant="matrix"
+                              />
+                            </motion.span>
+                          )}
+                      </motion.div>
+                    </div>
+                    {message.isComplete && (
+                      <div
+                        className={`flex space-x-0.5 ${
+                          message.role == "user"
+                            ? "justify-end mr-12"
+                            : "justify-start ml-12"
+                        } `}
+                      >
+                        <span
+                          title="Copy"
+                          className="border border-transparent hover:border-1 hover:border-gray-500 mt-1.5 p-1.5 rounded"
+                        >
+                          <LuCopy className="cursor-pointer text-lg" />
+                        </span>
+                        <span
+                          title="Read Aloud"
+                          onClick={() => handleSpeak(message.content)}
+                          className="border border-transparent hover:border-1 hover:border-gray-500 mt-1.5 p-1.5 rounded"
+                        >
+                          <RxSpeakerLoud className="cursor-pointer text-lg" />
+                        </span>
+                      </div>
                     )}
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
 
               {/* Invisible div for auto-scroll reference */}
               <div ref={messagesEndRef} />
@@ -559,12 +758,16 @@ export default function Home() {
           )}
 
           {/* Textarea for user input */}
-          <TextareaWithButtons
-            placeholder="Ask me anything..."
-            onSubmit={handleQuerySubmit}
-            className="max-w-2xl"
-            disabled={isResponseStreaming}
-          />
+          <div className="w-full max-w-2xl">
+            <TextareaWithButtons
+              placeholder="Ask me anything..."
+              onSubmit={handleQuerySubmit}
+              className="max-w-2xl"
+              disabled={isResponseStreaming}
+              isResponseStreaming={isResponseStreaming}
+              stopStream={stopStream}
+            />
+          </div>
         </section>
       </section>
     </>

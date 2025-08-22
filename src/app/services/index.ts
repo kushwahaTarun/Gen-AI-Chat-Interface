@@ -3,25 +3,69 @@ import toast from "react-hot-toast";
 
 const applicationBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://openrouter.ai/api/v1";
 
-// header configuration for the request
-const config = {
-    headers: {
-        'Content-Type': 'application/json',
-    }
-};
-
 // Function to *QUERY ANSWER STREAM* from OpenRouter API
-export async function queryAnswerStream(body: any) {
+interface ChatRequestBody {
+    model: string;
+    messages: Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        isComplete?: boolean;
+    }>;
+}
 
-    try{
-        // making a POST request to the OpenRouter API to get the answer stream
-        const response = await axios.post(`/api/chat`, body, config);
-        return response;
-    }
-    catch(error) {
-        toast.error("Failed to fetch models. Please try again later.");
-    }
+export async function queryAnswerStream(body: ChatRequestBody, onChunk: (content: string, isComplete: boolean) => void) {
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        });
 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+            throw new Error('Response body is null');
+        }
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                onChunk('', true); // Signal completion
+                break;
+            }
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonString = line.slice(6);
+                    if (jsonString === '[DONE]') {
+                        onChunk('', true);
+                        continue;
+                    }
+
+                    try {
+                        const json = JSON.parse(jsonString);
+                        const content = json.choices?.[0]?.delta?.content || '';
+                        onChunk(content, false);
+                    } catch (e) {
+                        console.error('Failed to parse JSON:', e);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        toast.error("Failed to get response. Please try again later.");
+        throw error;
+    }
 }
 
 // Function to get all LLM models from OpenRouter API

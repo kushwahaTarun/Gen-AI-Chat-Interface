@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
-import Providers from "./components/Providers";
-import AppSidebar from "./components/AppSidebar";
-import { Sidebar } from "./components/Sidebar"; // Import the Sidebar provider
+import Providers from "../components/Providers";
+import AppSidebar from "../components/AppSidebar";
+import { Sidebar } from "../components/Sidebar"; // Import the Sidebar provider
 import "./globals.css";
 import { cn } from "@/lib/util";
 

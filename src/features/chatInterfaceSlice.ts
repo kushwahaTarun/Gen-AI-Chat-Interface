@@ -1,10 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-import { Message } from '@/app/interfaces/chat';
+import { Message } from '@/interfaces/chat';
 
 // interfaces for the chat state
 export interface ChatState {
+  isSidebarOpen: boolean;
   userSelectedLLMModel: string;
   userSelectedLLMModelId: string;
   userCurrentMessage: Message;
@@ -17,6 +18,7 @@ export interface ChatState {
 
 // initial state for the chat slice
 const initialState: ChatState = {
+  isSidebarOpen: false, // state to manage the sidebar visibility
   userSelectedLLMModel: "openai/gpt-3.5-turbo",  // stores the user selected LLM model from the dropdown
   userSelectedLLMModelId: "openai/gpt-3.5-turbo", // stores the user selected LLM model ID
   userCurrentMessage:{
@@ -35,6 +37,10 @@ export const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    // action to toggle the sidebar visibility
+    setIsSidebarOpen: (state, action: PayloadAction<boolean>) => {
+      state.isSidebarOpen = action.payload;
+    },
     // action to set the user selected LLM model
     setUserSelectedModel: (state, action: PayloadAction<string>) => {
         state.userSelectedLLMModel = action.payload;
@@ -71,6 +77,6 @@ export const chatSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setUserSelectedModel, setUserSelectedLLMModelId, setUserCurrentMessage, setIsResponseStreaming, setCurrentConversationId, setMessages, setLLMModelDropdownOpen, setAllLLMModels } = chatSlice.actions
+export const { setIsSidebarOpen, setUserSelectedModel, setUserSelectedLLMModelId, setUserCurrentMessage, setIsResponseStreaming, setCurrentConversationId, setMessages, setLLMModelDropdownOpen, setAllLLMModels } = chatSlice.actions
 
 export default chatSlice.reducer

@@ -1,14 +1,15 @@
 "use client";
 import { cn } from "@/lib/util";
-import React, { useState, createContext, useContext } from "react";
+import React, { createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 import {
   setCurrentConversationId,
   setMessages,
   setIsResponseStreaming,
+  setIsSidebarOpen,
 } from "@/features/chatInterfaceSlice";
 
 interface Links {
@@ -46,11 +47,19 @@ export const SidebarProvider = ({
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
 }) => {
-  const [openState, setOpenState] = useState(false);
-  console.warn("SidebarProvider openState", openState);
+  const { isSidebarOpen } = useSelector((state: any) => state.chat);
 
-  const open = openProp !== undefined ? openProp : openState;
-  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
+  const dispatch = useDispatch();
+  const open = openProp !== undefined ? openProp : isSidebarOpen;
+  const setOpen =
+    setOpenProp !== undefined
+      ? setOpenProp
+      : (value) => {
+          // value can be boolean or a function returning boolean
+          const newValue =
+            typeof value === "function" ? value(isSidebarOpen) : value;
+          dispatch(setIsSidebarOpen(newValue));
+        };
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>

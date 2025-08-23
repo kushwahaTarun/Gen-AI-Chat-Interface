@@ -1,19 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { Sidebar, SidebarBody, SidebarLink } from "./Sidebar";
+import { Sidebar, SidebarBody, SidebarLink, useSidebar } from "./Sidebar";
 import { MdOutlineAddCircle } from "react-icons/md";
 import { signOut, getAuth } from "firebase/auth";
+import { AnimatePresence } from "motion/react";
 
-import user from "../../../public/user.png";
-import { useSidebar } from "./Sidebar";
+import user from "../../public/user.png";
 
 export default function AppSidebar() {
   // Get the current user from Firebase authentication
   const auth = getAuth();
 
   const data = useSidebar();
-  console.warn("data from useSidebar:", data);
 
   // Define the links for the sidebar
   const links = [
@@ -45,9 +44,15 @@ export default function AppSidebar() {
           </div>
 
           {/* Section that will display the conversation history of the user */}
-          <section className="mt-8">
-            <div className="text-xs">Recent Conversations</div>
-          </section>
+          {data.open ? (
+            <AnimatePresence>
+              <section className="mt-8">
+                <div className="text-xs">Recent Conversations</div>
+              </section>
+            </AnimatePresence>
+          ) : (
+            ""
+          )}
 
           {/* Section that will display the user profile and the settings option */}
           <section className="absolute bottom-3 left-2.5 text-center block">
@@ -56,7 +61,7 @@ export default function AppSidebar() {
               id="dropdownUserAvatarButton"
               className="cursor-pointer hover:opacity-80 transition-opacity rounded-full border-2 border-gray-700 hover:border-blue-500"
               data-dropdown-toggle="dropdownAvatar"
-              src={auth.currentUser?.photoURL || user}
+              src={user}
               height={40}
               width={40}
               onClick={() => signOut(auth)}

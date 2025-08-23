@@ -7,14 +7,14 @@ import { IoAttach } from "react-icons/io5";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
-import { getAllLLMModels } from "../../app/services";
+import { getAllLLMModels } from "../services";
 import {
   setUserSelectedModel,
   setUserSelectedLLMModelId,
   setUserCurrentMessage,
   setLLMModelDropdownOpen,
   setAllLLMModels,
-} from "../../features/chatInterfaceSlice";
+} from "../features/chatInterfaceSlice";
 
 // interface for the props of TextareaWithButtons component
 interface TextareaWithButtonsProps {

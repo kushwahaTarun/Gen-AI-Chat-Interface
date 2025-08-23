@@ -3,14 +3,15 @@ import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LuCopy } from "react-icons/lu";
+import { FaCirclePause } from "react-icons/fa6";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { RxSpeakerLoud } from "react-icons/rx";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-
 import { db } from "@/lib/firebase";
+import toast from "react-hot-toast";
 import {
   collection,
   addDoc,
@@ -28,15 +29,15 @@ import type { User } from "firebase/auth";
 import SignInPage from "@/app/Signin/page";
 import user from "../../public/user.png";
 import AI2 from "../../public/AI2.png";
-import RotatingIcon from "./components/RotatingIcon";
-import TextareaWithButtons from "./components/TextareaWithButtons";
+import RotatingIcon from "../components/RotatingIcon";
+import TextareaWithButtons from "../components/TextareaWithButtons";
+import { useSpeechSynthesis } from "@/hooks/useTextToSpeech";
 import {
   setUserCurrentMessage,
   setIsResponseStreaming,
   setCurrentConversationId,
   setMessages,
 } from "@/features/chatInterfaceSlice";
-import toast from "react-hot-toast";
 
 // creating a new auth instance
 const auth = getAuth();
@@ -46,6 +47,9 @@ export default function Home() {
 
   // creating a reference to the AbortController
   const controllerRef = useRef<AbortController | null>(null);
+
+  // destructuring the functions from the custom hook
+  const { handleSpeak, handleTextToSpeechPause } = useSpeechSynthesis();
 
   // accessing the state from redux
   const {
@@ -61,6 +65,9 @@ export default function Home() {
 
   // state that will store the details of the logged-in user
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+
+  // state to manage the icons and the text to speech response behaviour
+  const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);
 
   // Scroll to the bottom of the messages container
   const scrollToBottom = () => {
@@ -268,33 +275,6 @@ export default function Home() {
     }
   }
 
-  // Function to handle text-to-speech
-  const handleSpeak = (message: string) => {
-    console.warn("handleSpeak called with message:", message);
-
-    if (!message) return;
-
-    // Check if speech synthesis is supported
-    const speech = new SpeechSynthesisUtterance(message);
-    console.warn("speech", speech);
-
-    // Optional settings
-    speech.rate = 1; // Speed (0.1 to 10)
-    speech.pitch = 1; // Pitch (0 to 2)
-    speech.volume = 1; // Volume (0 to 1)
-
-    // Select a voice (optional)
-    const voices = window.speechSynthesis.getVoices();
-    console.warn("voices", voices);
-
-    if (voices.length > 0) {
-      speech.voice =
-        voices.find((voice) => voice.lang === "en-US") || voices[0];
-    }
-
-    window.speechSynthesis.speak(speech);
-  };
-
   // triggers when the user clicks on the stop streaming button
   const stopStream = () => {
     controllerRef.current?.abort();
@@ -500,13 +480,6 @@ export default function Home() {
         toast.error("Error fetching answer. Please try again later.");
       }
     }
-  };
-
-  // Function to start a new conversation
-  const startNewConversation = () => {
-    setCurrentConversationId("chat-" + Date.now());
-    dispatch(setMessages([]));
-    dispatch(setIsResponseStreaming(false));
   };
 
   // if the user is not logged in, return the SignInPage component
@@ -741,10 +714,26 @@ export default function Home() {
                         </span>
                         <span
                           title="Read Aloud"
-                          onClick={() => handleSpeak(message.content)}
                           className="border border-transparent hover:border-1 hover:border-gray-500 mt-1.5 p-1.5 rounded"
                         >
-                          <RxSpeakerLoud className="cursor-pointer text-lg" />
+                          {!pauseTextToSpeech ? (
+                            <RxSpeakerLoud
+                              className="cursor-pointer text-lg"
+                              onClick={() =>
+                                handleSpeak(
+                                  message.content,
+                                  setPauseTextToSpeech
+                                )
+                              }
+                            />
+                          ) : (
+                            <FaCirclePause
+                              className="cursor-pointer text-lg"
+                              onClick={() =>
+                                handleTextToSpeechPause(setPauseTextToSpeech)
+                              }
+                            />
+                          )}
                         </span>
                       </div>
                     )}

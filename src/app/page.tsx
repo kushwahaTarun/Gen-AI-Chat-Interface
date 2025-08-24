@@ -3,7 +3,7 @@ import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LuCopy } from "react-icons/lu";
-import { FaCirclePause } from "react-icons/fa6";
+import { FaCirclePause, FaCheck } from "react-icons/fa6";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,6 +68,9 @@ export default function Home() {
 
   // state to manage the icons and the text to speech response behaviour
   const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);
+
+  // state to display the user a notification for the copied message status
+  const [copyStatus, setCopyStatus] = useState("Copy");
 
   // Scroll to the bottom of the messages container
   const scrollToBottom = () => {
@@ -281,6 +284,32 @@ export default function Home() {
     controllerRef.current = null;
     dispatch(setIsResponseStreaming(false));
   };
+
+  // triggers and copy the message
+  const handleMessageCopy = async (messageContent: string) => {
+    try {
+      await navigator.clipboard.writeText(messageContent);
+      // updating the status to display user a status
+      setCopyStatus("Copied");
+
+      // clearing the state to remove the copied status after 2 second
+      setTimeout(() => {
+        setCopyStatus("Copy");
+      }, 2000);
+    } catch (err) {
+      console.error("Error copying the message content", err);
+
+      // updating the status to display user a status
+      setCopyStatus("Failed to copy the message");
+
+      // clearing the state to remove the copied status after 2 second
+      setTimeout(() => {
+        setCopyStatus("Copy");
+      }, 2000);
+    }
+  };
+
+  console.warn("Copy status", copyStatus);
 
   // triggers when the user submits a query
   const handleQuerySubmit = async () => {
@@ -707,10 +736,21 @@ export default function Home() {
                         } `}
                       >
                         <span
-                          title="Copy"
-                          className="border border-transparent hover:border-1 hover:border-gray-500 mt-1.5 p-1.5 rounded"
+                          title={copyStatus}
+                          className={`border border-transparent ${
+                            copyStatus == "Copy"
+                              ? "hover:border-1 hover:border-gray-500"
+                              : ""
+                          } mt-1.5 p-1.5 rounded`}
                         >
-                          <LuCopy className="cursor-pointer text-lg" />
+                          {copyStatus == "Copy" ? (
+                            <LuCopy
+                              className="cursor-pointer text-lg"
+                              onClick={() => handleMessageCopy(message.content)}
+                            />
+                          ) : (
+                            <FaCheck className="text-lg" />
+                          )}
                         </span>
                         <span
                           title="Read Aloud"

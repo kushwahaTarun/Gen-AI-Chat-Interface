@@ -3,6 +3,7 @@ import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LuCopy } from "react-icons/lu";
+import { TbFileExport, TbRepeat } from "react-icons/tb";
 import { FaCirclePause, FaCheck } from "react-icons/fa6";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -23,7 +24,7 @@ import {
   orderBy,
   onSnapshot,
 } from "firebase/firestore";
-import { onAuthStateChanged, getAuth, signOut } from "firebase/auth";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 import type { User } from "firebase/auth";
 
 import SignInPage from "@/app/Signin/page";
@@ -59,6 +60,8 @@ export default function Home() {
     currentConversationId,
     messages,
   } = useSelector((state: any) => state.chat);
+
+  console.warn("messages", messages);
 
   // creating a dispatch function to dispatch actions to the redux store
   const dispatch = useDispatch();
@@ -309,8 +312,6 @@ export default function Home() {
     }
   };
 
-  console.warn("Copy status", copyStatus);
-
   // triggers when the user submits a query
   const handleQuerySubmit = async () => {
     if (!loggedInUser || !userCurrentMessage?.content) {
@@ -538,7 +539,7 @@ export default function Home() {
 
         {/* Stores the page content and also the textarea for the user query */}
         <section
-          className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-[70%] ${
+          className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-full ${
             messages.length ? "h-[85%]" : "h-[70%]"
           }`}
         >
@@ -565,8 +566,8 @@ export default function Home() {
           )}
 
           {/* Display messages if there are any */}
-          {messages.length > 0 && (
-            <div className="w-full max-w-4xl flex-1 overflow-y-auto mb-6 p-4 rounded-xl custom-scrollbar">
+          {messages.length ? (
+            <div className="w-full flex-1 overflow-y-auto mb-6 p-4 rounded-xl custom-scrollbar">
               <AnimatePresence mode="popLayout">
                 {/* Messages will show streaming automatically via Firestore listener */}
                 {messages.map((message: any, index: number) => (
@@ -579,17 +580,13 @@ export default function Home() {
                       duration: 0.4,
                       ease: "easeOut",
                     }}
-                    className={`mb-6 w-full flex flex-col ${
-                      message.role === "user"
-                        ? "justify-end" // User messages aligned to the right
-                        : "justify-start" // Assistant messages aligned to the left
-                    }`}
+                    className={`mb-6 w-full flex flex-col items-center`}
                   >
                     <div
-                      className={`flex items-end gap-3 max-w-[100%] ${
+                      className={`flex items-end gap-3 max-w-[60%] w-full ${
                         message.role === "user"
-                          ? "flex-row-reverse" // User: avatar on right, message on left
-                          : "flex-row" // Assistant: avatar on left, message on right
+                          ? "flex-row-reverse justify-start" // User: avatar on right, message on left
+                          : "flex-row justify-start" // Assistant: avatar on left, message on right
                       }`}
                     >
                       {/* Avatar */}
@@ -727,55 +724,72 @@ export default function Home() {
                           )}
                       </motion.div>
                     </div>
+
+                    {/* Action buttons positioned below the message */}
                     {message.isComplete && (
-                      <div
-                        className={`flex space-x-0.5 ${
+                      <section
+                        className={`flex mt-2 max-w-[60%] w-full ${
                           message.role == "user"
-                            ? "justify-end mr-12"
-                            : "justify-start ml-12"
-                        } `}
+                            ? "justify-end pr-12"
+                            : "justify-start pl-12"
+                        }`}
                       >
-                        <span
-                          title={copyStatus}
-                          className={`border border-transparent ${
-                            copyStatus == "Copy"
-                              ? "hover:border-1 hover:border-gray-500"
-                              : ""
-                          } mt-1.5 p-1.5 rounded`}
-                        >
-                          {copyStatus == "Copy" ? (
-                            <LuCopy
-                              className="cursor-pointer text-lg"
-                              onClick={() => handleMessageCopy(message.content)}
-                            />
-                          ) : (
-                            <FaCheck className="text-lg" />
-                          )}
-                        </span>
-                        <span
-                          title="Read Aloud"
-                          className="border border-transparent hover:border-1 hover:border-gray-500 mt-1.5 p-1.5 rounded"
-                        >
-                          {!pauseTextToSpeech ? (
-                            <RxSpeakerLoud
-                              className="cursor-pointer text-lg"
-                              onClick={() =>
-                                handleSpeak(
-                                  message.content,
-                                  setPauseTextToSpeech
-                                )
-                              }
-                            />
-                          ) : (
-                            <FaCirclePause
-                              className="cursor-pointer text-lg"
-                              onClick={() =>
-                                handleTextToSpeechPause(setPauseTextToSpeech)
-                              }
-                            />
-                          )}
-                        </span>
-                      </div>
+                        {/* Icons on the left side of the response */}
+                        <div className="flex justify-start w-1/2 space-x-4">
+                          {/* Export option */}
+                          <div className="text-gray-400 hover:text-white flex items-center cursor-pointer rounded-xl px-2 hover:bg-gray-800">
+                            <TbFileExport />
+                            <span className="ml-1 text-xs">Export</span>
+                          </div>
+                          {/* Rewrite option */}
+                          <div className="text-gray-400 hover:text-white flex items-center cursor-pointer rounded-xl px-2 hover:bg-gray-800">
+                            <TbRepeat />
+                            <span className="ml-1 text-xs">Rewrite</span>
+                          </div>
+                        </div>
+
+                        {/* Icons on the right of the response */}
+                        <div className="flex items-center justify-end space-x-0.5 w-1/2">
+                          <span
+                            title={copyStatus}
+                            className={`hover:bg-gray-800 text-gray-400 hover:text-white p-1.5 rounded`}
+                          >
+                            {copyStatus == "Copy" ? (
+                              <LuCopy
+                                className="cursor-pointer text-base"
+                                onClick={() =>
+                                  handleMessageCopy(message.content)
+                                }
+                              />
+                            ) : (
+                              <FaCheck className="text-base" />
+                            )}
+                          </span>
+                          <span
+                            title="Read Aloud"
+                            className="hover:bg-gray-800 text-gray-400 hover:text-white p-1.5 rounded"
+                          >
+                            {!pauseTextToSpeech ? (
+                              <RxSpeakerLoud
+                                className="cursor-pointer text-base"
+                                onClick={() =>
+                                  handleSpeak(
+                                    message.content,
+                                    setPauseTextToSpeech
+                                  )
+                                }
+                              />
+                            ) : (
+                              <FaCirclePause
+                                className="cursor-pointer text-base"
+                                onClick={() =>
+                                  handleTextToSpeechPause(setPauseTextToSpeech)
+                                }
+                              />
+                            )}
+                          </span>
+                        </div>
+                      </section>
                     )}
                   </motion.div>
                 ))}
@@ -784,6 +798,8 @@ export default function Home() {
               {/* Invisible div for auto-scroll reference */}
               <div ref={messagesEndRef} />
             </div>
+          ) : (
+            ""
           )}
 
           {/* Textarea for user input */}

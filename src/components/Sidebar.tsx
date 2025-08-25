@@ -187,7 +187,7 @@ export const SidebarLink = ({
   // triggers when user clicks on the link and the option is chat
   const handleNewChat = () => {
     // reset the current conversation ID, messages, and streaming state
-    setCurrentConversationId("chat-" + Date.now());
+    dispatch(setCurrentConversationId("chat-" + Date.now()));
     dispatch(setMessages([]));
     dispatch(setIsResponseStreaming(false));
   };

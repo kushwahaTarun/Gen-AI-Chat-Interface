@@ -3,12 +3,14 @@ import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LuCopy } from "react-icons/lu";
-import { TbFileExport, TbRepeat } from "react-icons/tb";
-import { FaCirclePause, FaCheck } from "react-icons/fa6";
+import { AiOutlinePauseCircle } from "react-icons/ai";
+import { TbRepeat } from "react-icons/tb";
+import { FaCheck } from "react-icons/fa6";
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { RxSpeakerLoud } from "react-icons/rx";
+import { MenuButton, Button } from "@headlessui/react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { db } from "@/lib/firebase";
@@ -30,6 +32,7 @@ import type { User } from "firebase/auth";
 import SignInPage from "@/app/Signin/page";
 import user from "../../public/user.png";
 import AI2 from "../../public/AI2.png";
+import ExportMsgBtn from "@/components/ExportMsgBtn";
 import RotatingIcon from "../components/RotatingIcon";
 import TextareaWithButtons from "../components/TextareaWithButtons";
 import { useSpeechSynthesis } from "@/hooks/useTextToSpeech";
@@ -735,17 +738,19 @@ export default function Home() {
                         }`}
                       >
                         {/* Icons on the left side of the response */}
-                        <div className="flex justify-start w-1/2 space-x-4">
-                          {/* Export option */}
-                          <div className="text-gray-400 hover:text-white flex items-center cursor-pointer rounded-xl px-2 hover:bg-gray-800">
-                            <TbFileExport />
-                            <span className="ml-1 text-xs">Export</span>
-                          </div>
-                          {/* Rewrite option */}
-                          <div className="text-gray-400 hover:text-white flex items-center cursor-pointer rounded-xl px-2 hover:bg-gray-800">
-                            <TbRepeat />
-                            <span className="ml-1 text-xs">Rewrite</span>
-                          </div>
+                        <div
+                          className={`flex justify-start transition duration-100 ease-out w-1/2 space-x-2 ${
+                            message.role === "assistant" ? "" : "invisible"
+                          }`}
+                        >
+                          {/* Export Button with the dropdown */}
+                          <ExportMsgBtn currentAiResponse={message} />
+
+                          {/* Repeat button */}
+                          <Button className="text-gray-400 text-sm hover:text-white flex items-center cursor-pointer rounded-xl px-2 hover:bg-gray-800">
+                            <TbRepeat className="text-base mr-1" />
+                            Rewrite
+                          </Button>
                         </div>
 
                         {/* Icons on the right of the response */}
@@ -780,7 +785,7 @@ export default function Home() {
                                 }
                               />
                             ) : (
-                              <FaCirclePause
+                              <AiOutlinePauseCircle
                                 className="cursor-pointer text-base"
                                 onClick={() =>
                                   handleTextToSpeechPause(setPauseTextToSpeech)

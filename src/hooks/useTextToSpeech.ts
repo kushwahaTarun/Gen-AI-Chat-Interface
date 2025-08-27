@@ -56,7 +56,7 @@ export const useSpeechSynthesis = () => {
             setPauseTextToSpeech(false);
         };
 
-      return {
+        return {
         handleSpeak,
         handleTextToSpeechPause,
       }

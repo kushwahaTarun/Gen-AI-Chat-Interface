@@ -1,5 +1,7 @@
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { saveAs } from 'file-saver';
 
 export const useExportChat = () => {
   // accessing the state from redux
@@ -141,9 +143,43 @@ toast.error("Error while downloading markdown")
 }
 }
 
+  // triggers when user clicks on the export to docx button
+  const exportToDocx = (currentAiResponse: any) => {
+    const messageToExport= getUserAndAIMsgToExport(currentAiResponse);
+    
+    // new documen instance
+    const doc = new Document({
+      sections: [
+      {
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({ text: "User:", bold: true }),
+              new TextRun({ text: `${messageToExport[0].content}`, break: 1}),
+              new TextRun({ text: `${messageToExport[0].content}`, break: 1}),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "AI:", bold: true }),
+              new TextRun({ text: ` ${messageToExport[1].content}`, break: 1 }),
+            ],
+          }),
+        ],
+      },
+    ],
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+    saveAs(blob, "chat.docx");
+  });
+  }
+
   // return statement
   return { 
     exportToPDF, 
-    exportToMarkdown
+    exportToMarkdown,
+    exportToDocx
   };
 };

@@ -1,4 +1,4 @@
-export const useSpeechSynthesis = () => {
+export default function useSpeechSynthesis() {
 
     // function to handle text to speech once user click on the speaker button this function will be triggerd and generate an AI speech
       const handleSpeak = (message: string, setPauseTextToSpeech: (state: boolean) => void) => {

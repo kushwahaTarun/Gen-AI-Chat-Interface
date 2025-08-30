@@ -15,18 +15,7 @@ import {
   IoVideocam,
   IoDocument,
   IoCamera,
-  IoAdd,
 } from "react-icons/io5";
-import {
-  HiEye,
-  HiMicrophone,
-  HiAcademicCap,
-  HiCode,
-  HiSparkles,
-  HiLightningBolt,
-  HiColorSwatch,
-  HiGlobe,
-} from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";

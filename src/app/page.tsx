@@ -21,9 +21,10 @@ import AI2 from "../../public/AI2.png";
 import ExportMsgBtn from "@/components/ExportMsgBtn";
 import RotatingIcon from "../components/RotatingIcon";
 import TextareaWithButtons from "../components/TextareaWithButtons";
-import { useSpeechSynthesis } from "@/hooks/useTextToSpeech";
+import useSpeechSynthesis from "@/hooks/useTextToSpeech";
 import useAuth from "@/hooks/useAuth";
 import useAutoScroll from "@/hooks/useAutoScroll";
+import useMessageActions from "@/hooks/useMessageActions";
 import BuyMeACoffeeButtonDirect from "@/components/BuyMeACoffeeButton";
 
 export default function Home() {
@@ -36,10 +37,7 @@ export default function Home() {
   );
 
   // state to manage the icons and the text to speech response behaviour
-  const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);
-
-  // state to display the user a notification for the copied message status
-  const [copyStatus, setCopyStatus] = useState("Copy");
+  const [pauseTextToSpeech, setPauseTextToSpeech] = useState<boolean>(false);
 
   // custom hook that stores the authentication logic
   useAuth();
@@ -48,29 +46,8 @@ export default function Home() {
   // streaming
   const { messagesEndRef } = useAutoScroll();
 
-  // triggers and copy the message
-  const handleMessageCopy = async (messageContent: string) => {
-    try {
-      await navigator.clipboard.writeText(messageContent);
-      // updating the status to display user a status
-      setCopyStatus("Copied");
-
-      // clearing the state to remove the copied status after 2 second
-      setTimeout(() => {
-        setCopyStatus("Copy");
-      }, 2000);
-    } catch (err) {
-      console.error("Error copying the message content", err);
-
-      // updating the status to display user a status
-      setCopyStatus("Failed to copy the message");
-
-      // clearing the state to remove the copied status after 2 second
-      setTimeout(() => {
-        setCopyStatus("Copy");
-      }, 2000);
-    }
-  };
+  // hook that return the state and the utility functions
+  const { copyStatus, handleMessageCopy } = useMessageActions();
 
   // if the user is not logged in, return the SignInPage component
   // which will render the sign-in form

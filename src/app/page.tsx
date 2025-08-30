@@ -31,11 +31,9 @@ export default function Home() {
   const { handleSpeak, handleTextToSpeechPause } = useSpeechSynthesis();
 
   // accessing the state from redux
-  const {
-    isResponseStreaming,
-    loggedInUser,
-    messages,
-  } = useSelector((state: RootState) => state.chat);
+  const { isResponseStreaming, loggedInUser, messages } = useSelector(
+    (state: RootState) => state.chat
+  );
 
   // state to manage the icons and the text to speech response behaviour
   const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);

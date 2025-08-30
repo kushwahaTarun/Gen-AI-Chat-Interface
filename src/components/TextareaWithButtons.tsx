@@ -8,11 +8,6 @@ import {
   MdClose,
   MdExpandLess,
   MdExpandMore,
-  MdInfo,
-  MdSpeed,
-  MdHighQuality,
-  MdFree,
-  MdStar,
 } from "react-icons/md";
 import {
   IoAttach,

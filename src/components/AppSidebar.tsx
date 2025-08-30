@@ -5,6 +5,7 @@ import { HiOutlineTrash } from "react-icons/hi";
 import { signOut, getAuth } from "firebase/auth";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store/store";
 import toast from "react-hot-toast";
 
 import user from "../../public/user.png";
@@ -21,8 +22,8 @@ export default function AppSidebar() {
   const dispatch = useDispatch();
 
   // Get state from Redux
-  const { loggedInUser, currentConversationId, messages } = useSelector(
-    (state: any) => state.chat
+  const { loggedInUser, currentConversationId } = useSelector(
+    (state: RootState) => state.chat
   );
 
   // Get conversation history using the custom hook
@@ -199,19 +200,7 @@ export default function AppSidebar() {
 
           {/* Section that will display the user profile and the settings option */}
           <section className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-800">
-            <div className="flex items-center justify-between px-2">
-              {/* User info when sidebar is open */}
-              {data.open && loggedInUser && (
-                <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-xs font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                    {loggedInUser.displayName || "User"}
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                    {loggedInUser.email}
-                  </p>
-                </div>
-              )}
-
+            <div className="flex items-center justify-between gap-x-2">
               {/* Profile icon */}
               <Image
                 id="dropdownUserAvatarButton"
@@ -227,6 +216,18 @@ export default function AppSidebar() {
                 alt="profile icon"
                 title="Click to sign out"
               />
+
+              {/* User info when sidebar is open */}
+              {data.open && loggedInUser && (
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="text-xs font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                    {loggedInUser.displayName || "User"}
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                    {loggedInUser.email}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -44,14 +44,13 @@ import {
   setLLMModelDropdownOpen,
   setAllLLMModels,
 } from "../features/chatInterfaceSlice";
+import useChat from "@/hooks/useChat";
 
 // interface for the props of TextareaWithButtons component
 interface TextareaWithButtonsProps {
   placeholder?: string;
-  onSubmit?: () => void;
   className?: string;
   isResponseStreaming: boolean;
-  stopStream: () => void;
   supportedMediaTypes?: string;
 }
 
@@ -841,10 +840,8 @@ const PriceDisplay = ({ label, price }: { label: string; price: string }) => {
 
 const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   placeholder = "Ask me anything...",
-  onSubmit,
   className = "",
   isResponseStreaming,
-  stopStream,
   supportedMediaTypes = "images,videos,documents",
 }) => {
   // using dispatch from redux to manage state
@@ -852,6 +849,8 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
 
   // Add these state variables with your other useState declarations
   const [modelSearchQuery, setModelSearchQuery] = useState("");
+
+  const { stopStream, handleQuerySubmit } = useChat();
 
   // accessing the state from redux
   const {
@@ -1247,7 +1246,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   const handleSubmit = () => {
     if (
       (userCurrentMessage.content.trim() || uploadedFiles.length > 0) &&
-      onSubmit
+      handleQuerySubmit
     ) {
       const userMessage = {
         ...userCurrentMessage,
@@ -1255,7 +1254,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
         attachments: uploadedFiles, // Include uploaded files
       };
       dispatch(setUserCurrentMessage(userMessage));
-      onSubmit();
+      handleQuerySubmit();
       // stop listening the voice recognition once user sends the query
       stopListening();
       // Clear uploaded files after sending

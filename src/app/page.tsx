@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,26 +8,13 @@ import { LuCopy } from "react-icons/lu";
 import { AiOutlinePauseCircle } from "react-icons/ai";
 import { TbRepeat } from "react-icons/tb";
 import { FaCheck } from "react-icons/fa6";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { RxSpeakerLoud } from "react-icons/rx";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import toast from "react-hot-toast";
-import {
-  collection,
-  serverTimestamp,
-  updateDoc,
-  doc,
-  addDoc,
-  setDoc,
-  query,
-  orderBy,
-  onSnapshot,
-} from "firebase/firestore";
 import type { RootState } from "@/store/store";
 
-import { db } from "@/lib/firebase";
 import SignInPage from "@/app/Signin/page";
 import user from "../../public/user.png";
 import AI2 from "../../public/AI2.png";
@@ -37,33 +24,18 @@ import TextareaWithButtons from "../components/TextareaWithButtons";
 import { useSpeechSynthesis } from "@/hooks/useTextToSpeech";
 import useAuth from "@/hooks/useAuth";
 import useAutoScroll from "@/hooks/useAutoScroll";
-import {
-  setUserCurrentMessage,
-  setIsResponseStreaming,
-  setCurrentConversationId,
-  setMessages,
-} from "@/features/chatInterfaceSlice";
 import BuyMeACoffeeButtonDirect from "@/components/BuyMeACoffeeButton";
 
 export default function Home() {
-  // creating a reference to the AbortController
-  const controllerRef = useRef<AbortController | null>(null);
-
   // destructuring the functions from the custom hook
   const { handleSpeak, handleTextToSpeechPause } = useSpeechSynthesis();
 
   // accessing the state from redux
   const {
-    userSelectedLLMModelId,
-    userCurrentMessage,
     isResponseStreaming,
-    currentConversationId,
     loggedInUser,
     messages,
   } = useSelector((state: RootState) => state.chat);
-
-  // creating a dispatch function to dispatch actions to the redux store
-  const dispatch = useDispatch();
 
   // state to manage the icons and the text to speech response behaviour
   const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);
@@ -76,234 +48,7 @@ export default function Home() {
 
   // custom hook that is responsible for scrolling towards the bottom once the response is
   // streaming
-  const { messagesEndRef, scrollToBottom } = useAutoScroll();
-
-  // Only set conversation ID if none exists AND we don't have any messages
-  useEffect(() => {
-    if (!currentConversationId && messages.length === 0) {
-      const newConversationId = "chat-" + Date.now();
-      dispatch(setCurrentConversationId(newConversationId));
-    }
-  }, [currentConversationId, messages.length, dispatch]);
-
-  // Handle conversation switching and message loading
-  useEffect(() => {
-    let messageUnsubscribe: (() => void) | undefined;
-
-    // When conversation ID changes and we have a logged in user, load the messages
-    if (loggedInUser && currentConversationId) {
-      messageUnsubscribe = loadConversationMessages(
-        loggedInUser.uid,
-        currentConversationId
-      );
-    }
-
-    // Return cleanup function
-    return () => {
-      if (messageUnsubscribe) {
-        messageUnsubscribe();
-      }
-    };
-  }, [currentConversationId, loggedInUser]);
-
-  // Load conversation messages in real-time
-  const loadConversationMessages = (
-    userUid: string,
-    conversationId: string
-  ) => {
-    const messagesRef = collection(
-      db,
-      "users",
-      userUid,
-      "conversations",
-      conversationId,
-      "messages"
-    );
-    const q = query(messagesRef, orderBy("timestamp", "asc"));
-
-    return onSnapshot(
-      q,
-      (snapshot) => {
-        const loadedMessages: any[] = [];
-        snapshot.forEach((doc) => {
-          const messageData = doc.data();
-          loadedMessages.push({
-            id: doc.id,
-            role: messageData.isBot ? "assistant" : messageData.role,
-            content: messageData.content,
-            isComplete: messageData.isComplete,
-            timestamp:
-              messageData.timestamp?.toDate?.()?.toISOString() ||
-              new Date().toISOString(),
-          });
-        });
-
-        dispatch(setMessages(loadedMessages));
-      },
-      (error) => {
-        // Handle case where conversation doesn't exist yet (new conversation)
-        if (error.code === "permission-denied" || loadedMessages.length === 0) {
-          console.log("No messages found for conversation:", conversationId);
-          dispatch(setMessages([]));
-        } else {
-          console.error("Error loading messages:", error);
-        }
-      }
-    );
-  };
-
-  // CREATE conversation only once when starting new chat
-  async function createNewConversation(
-    userUid: string,
-    conversationId: string,
-    firstMessage: string
-  ) {
-    try {
-      const conversationRef = doc(
-        db,
-        "users",
-        userUid,
-        "conversations",
-        conversationId
-      );
-
-      await setDoc(conversationRef, {
-        title:
-          firstMessage.length > 50
-            ? firstMessage.substring(0, 50) + "..."
-            : firstMessage,
-        lastMessage: firstMessage,
-        lastActivity: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      });
-
-      return true;
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      return false;
-    }
-  }
-
-  // UPDATE conversation only when needed (not for every message)
-  async function updateConversationLastMessage(
-    userUid: string,
-    conversationId: string,
-    lastMessage: string
-  ) {
-    try {
-      const conversationRef = doc(
-        db,
-        "users",
-        userUid,
-        "conversations",
-        conversationId
-      );
-
-      await updateDoc(conversationRef, {
-        lastMessage: lastMessage,
-        lastActivity: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error updating conversation:", error);
-    }
-  }
-
-  // triggers when the user submits a query and this will save the user message
-  // to the Firestore database
-  async function saveUserMessage(
-    userUid: string,
-    conversationId: string,
-    userCurrentMessage: {
-      [key: string]: string;
-    }
-  ) {
-    try {
-      const messageRef = await addDoc(
-        collection(
-          db,
-          "users",
-          userUid,
-          "conversations",
-          conversationId,
-          "messages"
-        ),
-        {
-          content: userCurrentMessage.content,
-          role: userCurrentMessage.role,
-          isBot: false,
-          isComplete: true,
-          timestamp: serverTimestamp(),
-        }
-      );
-      return messageRef.id;
-    } catch (error) {
-      console.error("Error saving user message:", error);
-      throw error;
-    }
-  }
-
-  async function createBotMessage(userUid: string, conversationId: string) {
-    try {
-      // Create an empty bot message first
-      const messageRef = await addDoc(
-        collection(
-          db,
-          "users",
-          userUid,
-          "conversations",
-          conversationId,
-          "messages"
-        ),
-        {
-          content: "", // Start empty
-          role: "assistant",
-          isBot: true,
-          isComplete: false, // Not complete yet
-          timestamp: serverTimestamp(),
-        }
-      );
-      return messageRef.id; // Return message ID to update later
-    } catch (error) {
-      console.error("Error creating bot message:", error);
-      throw error;
-    }
-  }
-
-  // Update bot message during streaming
-  async function updateBotMessage(
-    userUid: string,
-    conversationId: string,
-    messageId: string,
-    content: string,
-    isComplete: boolean = false
-  ) {
-    try {
-      await updateDoc(
-        doc(
-          db,
-          "users",
-          userUid,
-          "conversations",
-          conversationId,
-          "messages",
-          messageId
-        ),
-        {
-          content: content,
-          isComplete: isComplete,
-        }
-      );
-    } catch (error) {
-      console.error("Error updating bot message:", error);
-    }
-  }
-
-  // triggers when the user clicks on the stop streaming button
-  const stopStream = () => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-    dispatch(setIsResponseStreaming(false));
-  };
+  const { messagesEndRef } = useAutoScroll();
 
   // triggers and copy the message
   const handleMessageCopy = async (messageContent: string) => {
@@ -326,197 +71,6 @@ export default function Home() {
       setTimeout(() => {
         setCopyStatus("Copy");
       }, 2000);
-    }
-  };
-
-  // triggers when the user submits a query
-  const handleQuerySubmit = async () => {
-    if (!loggedInUser || !userCurrentMessage?.content) {
-      toast.error(
-        "Please make sure you're logged in and have entered a message."
-      );
-      return;
-    }
-
-    // Cleanup any prior controller
-    controllerRef.current?.abort();
-    dispatch(setIsResponseStreaming(true));
-
-    try {
-      const controller = new AbortController();
-      controllerRef.current = controller;
-
-      // Store the current message content before clearing
-      const currentMessageContent = userCurrentMessage.content;
-      const currentMessageObject = { ...userCurrentMessage };
-
-      // Clear the textarea input immediately
-      dispatch(
-        setUserCurrentMessage({
-          role: "user",
-          content: "",
-        })
-      );
-
-      // Check if this is a new conversation (no messages yet)
-      const isNewConversation = messages.length === 0;
-
-      // If it's a new conversation, create the conversation metadata ONLY ONCE
-      if (isNewConversation) {
-        console.log("Creating new conversation:", currentConversationId);
-        const success = await createNewConversation(
-          loggedInUser.uid,
-          currentConversationId,
-          currentMessageContent
-        );
-
-        if (!success) {
-          throw new Error("Failed to create conversation");
-        }
-      }
-
-      // Save user message using the stored content
-      await saveUserMessage(
-        loggedInUser.uid,
-        currentConversationId,
-        currentMessageObject
-      );
-
-      // Create empty bot message
-      const botMessageId = await createBotMessage(
-        loggedInUser.uid,
-        currentConversationId
-      );
-
-      // Call API with the stored message
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          model: userSelectedLLMModelId,
-          messages: [...messages, currentMessageObject], // Use stored message
-        }),
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = "";
-      let fullResponse = "";
-      let updateCount = 0;
-
-      while (true) {
-        const { done, value } = await reader?.read();
-
-        if (done) {
-          controllerRef.current = null;
-
-          // Mark bot message as complete
-          await updateBotMessage(
-            loggedInUser.uid,
-            currentConversationId,
-            botMessageId,
-            fullResponse,
-            true
-          );
-
-          // Update conversation with bot's response (NOT creating new conversation)
-          await updateConversationLastMessage(
-            loggedInUser.uid,
-            currentConversationId,
-            fullResponse
-          );
-
-          dispatch(setIsResponseStreaming(false));
-          break;
-        }
-
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-
-          if (
-            !trimmedLine ||
-            trimmedLine === "data: [DONE]" ||
-            trimmedLine === "[DONE]"
-          ) {
-            continue;
-          }
-
-          const jsonStr = trimmedLine.startsWith("data: ")
-            ? trimmedLine.slice(6)
-            : trimmedLine;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content || "";
-
-            if (content) {
-              fullResponse += content;
-              updateCount++;
-
-              await updateBotMessage(
-                loggedInUser.uid,
-                currentConversationId,
-                botMessageId,
-                fullResponse,
-                false
-              );
-
-              if (updateCount % 3 === 0) {
-                setTimeout(scrollToBottom, 50);
-              }
-            }
-
-            if (parsed.choices?.[0]?.finish_reason === "stop") {
-              await updateBotMessage(
-                loggedInUser.uid,
-                currentConversationId,
-                botMessageId,
-                fullResponse,
-                true
-              );
-
-              // Update conversation with final response (NOT creating new conversation)
-              await updateConversationLastMessage(
-                loggedInUser.uid,
-                currentConversationId,
-                fullResponse
-              );
-
-              dispatch(setIsResponseStreaming(false));
-              break;
-            }
-          } catch (parseError) {
-            console.warn("Failed to parse JSON:", jsonStr, parseError);
-          }
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    } catch (err: unknown) {
-      if (err.name === "AbortError") {
-        return;
-      }
-
-      dispatch(setIsResponseStreaming(false));
-
-      if (err instanceof Error) {
-        toast.error(
-          `Error fetching answer. Please try again later. ${err.message}`
-        );
-      } else {
-        toast.error("Error fetching answer. Please try again later.");
-      }
     }
   };
 
@@ -815,11 +369,9 @@ export default function Home() {
           <div className="w-full max-w-2xl">
             <TextareaWithButtons
               placeholder="Ask me anything..."
-              onSubmit={handleQuerySubmit}
               className="max-w-2xl"
               disabled={isResponseStreaming}
               isResponseStreaming={isResponseStreaming}
-              stopStream={stopStream}
             />
           </div>
         </section>

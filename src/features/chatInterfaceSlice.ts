@@ -1,7 +1,16 @@
+// Update your Redux slice to store only serializable user data
+
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-
 import { Message } from '@/interfaces/chat';
+
+// Create a serializable user interface
+export interface SerializableUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
 
 // interfaces for the chat state
 export interface ChatState {
@@ -12,25 +21,27 @@ export interface ChatState {
   isResponseStreaming: boolean;
   currentConversationId: string;
   messages: Message[];
+  loggedInUser: SerializableUser | null; // Changed to serializable user
   llmModelDropdownOpen: boolean;
   allLLMModels: Array<{ id: string; name: string; }>;
 }
 
 // initial state for the chat slice
 const initialState: ChatState = {
-  isSidebarOpen: false, // state to manage the sidebar visibility
-  userSelectedLLMModel: "openai/gpt-3.5-turbo",  // stores the user selected LLM model from the dropdown
-  userSelectedLLMModelId: "openai/gpt-3.5-turbo", // stores the user selected LLM model ID
-  userCurrentMessage:{
+  isSidebarOpen: false,
+  userSelectedLLMModel: "openai/gpt-3.5-turbo",
+  userSelectedLLMModelId: "openai/gpt-3.5-turbo",
+  userCurrentMessage: {
     role: "user",
-    content: "", // stores the current message from the user
+    content: "",
     isComplete: true
   },
-  isResponseStreaming: false, // indicates if the AI response is still streaming
-  currentConversationId: "", // stores the current conversation ID
-  messages: [], // stores the user and the AI messages in the chat
-  llmModelDropdownOpen: false, // state to manage the dropdown menu for LLM models
-  allLLMModels: [], // state variable to store all LLM models fetched from the API
+  isResponseStreaming: false,
+  currentConversationId: "",
+  messages: [],
+  loggedInUser: null, // Now stores serializable user data
+  llmModelDropdownOpen: false,
+  allLLMModels: [],
 }
 
 export const chatSlice = createSlice({
@@ -43,15 +54,15 @@ export const chatSlice = createSlice({
     },
     // action to set the user selected LLM model
     setUserSelectedModel: (state, action: PayloadAction<string>) => {
-        state.userSelectedLLMModel = action.payload;
+      state.userSelectedLLMModel = action.payload;
     },
     // action to set the user selected LLM model
     setUserSelectedLLMModelId: (state, action: PayloadAction<string>) => {
-        state.userSelectedLLMModelId = action.payload;
+      state.userSelectedLLMModelId = action.payload;
     },
     // action to set the user's query input
     setUserCurrentMessage: (state, action: PayloadAction<Message>) => {
-        state.userCurrentMessage = action.payload;
+      state.userCurrentMessage = action.payload;
     },
     // action to set if the AI response is still streaming
     setIsResponseStreaming: (state, action) => {
@@ -61,22 +72,37 @@ export const chatSlice = createSlice({
     setCurrentConversationId: (state, action) => {
       state.currentConversationId = action.payload;
     },
+    // action to update the state of the **loggedInUser**
+    setLoggedInUser: (state, action: PayloadAction<SerializableUser | null>) => {
+      state.loggedInUser = action.payload;
+    },
     // action to set the messages in the chat
     setMessages: (state, action: PayloadAction<Message[]>) => {
-      state.messages = action.payload; 
+      state.messages = action.payload;
     },
     // action to toggle the dropdown menu for LLM models
     setLLMModelDropdownOpen: (state, action: PayloadAction<boolean>) => {
-        state.llmModelDropdownOpen = action.payload;
+      state.llmModelDropdownOpen = action.payload;
     },
     // action to set all LLM models fetched from the API
     setAllLLMModels: (state, action: PayloadAction<Array<{ id: string; name: string; }>>)=> {
-        state.allLLMModels = action.payload;
+      state.allLLMModels = action.payload;
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { setIsSidebarOpen, setUserSelectedModel, setUserSelectedLLMModelId, setUserCurrentMessage, setIsResponseStreaming, setCurrentConversationId, setMessages, setLLMModelDropdownOpen, setAllLLMModels } = chatSlice.actions
+export const { 
+  setIsSidebarOpen, 
+  setUserSelectedModel, 
+  setUserSelectedLLMModelId, 
+  setUserCurrentMessage, 
+  setIsResponseStreaming, 
+  setCurrentConversationId, 
+  setLoggedInUser, 
+  setMessages, 
+  setLLMModelDropdownOpen, 
+  setAllLLMModels 
+} = chatSlice.actions
 
 export default chatSlice.reducer

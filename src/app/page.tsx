@@ -1,34 +1,33 @@
 "use client";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Button } from "@headlessui/react";
 import { LuCopy } from "react-icons/lu";
 import { AiOutlinePauseCircle } from "react-icons/ai";
 import { TbRepeat } from "react-icons/tb";
 import { FaCheck } from "react-icons/fa6";
-import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { RxSpeakerLoud } from "react-icons/rx";
-import { MenuButton, Button } from "@headlessui/react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { db } from "@/lib/firebase";
 import toast from "react-hot-toast";
 import {
   collection,
-  addDoc,
   serverTimestamp,
   updateDoc,
   doc,
+  addDoc,
   setDoc,
   query,
   orderBy,
   onSnapshot,
 } from "firebase/firestore";
-import { onAuthStateChanged, getAuth } from "firebase/auth";
-import type { User } from "firebase/auth";
+import type { RootState } from "@/store/store";
 
+import { db } from "@/lib/firebase";
 import SignInPage from "@/app/Signin/page";
 import user from "../../public/user.png";
 import AI2 from "../../public/AI2.png";
@@ -36,19 +35,17 @@ import ExportMsgBtn from "@/components/ExportMsgBtn";
 import RotatingIcon from "../components/RotatingIcon";
 import TextareaWithButtons from "../components/TextareaWithButtons";
 import { useSpeechSynthesis } from "@/hooks/useTextToSpeech";
+import useAuth from "@/hooks/useAuth";
+import useAutoScroll from "@/hooks/useAutoScroll";
 import {
   setUserCurrentMessage,
   setIsResponseStreaming,
   setCurrentConversationId,
   setMessages,
 } from "@/features/chatInterfaceSlice";
-
-// creating a new auth instance
-const auth = getAuth();
+import BuyMeACoffeeButtonDirect from "@/components/BuyMeACoffeeButton";
 
 export default function Home() {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
   // creating a reference to the AbortController
   const controllerRef = useRef<AbortController | null>(null);
 
@@ -61,16 +58,12 @@ export default function Home() {
     userCurrentMessage,
     isResponseStreaming,
     currentConversationId,
+    loggedInUser,
     messages,
-  } = useSelector((state: any) => state.chat);
-
-  console.warn("messages", messages);
+  } = useSelector((state: RootState) => state.chat);
 
   // creating a dispatch function to dispatch actions to the redux store
   const dispatch = useDispatch();
-
-  // state that will store the details of the logged-in user
-  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
 
   // state to manage the icons and the text to speech response behaviour
   const [pauseTextToSpeech, setPauseTextToSpeech] = useState(false);
@@ -78,60 +71,40 @@ export default function Home() {
   // state to display the user a notification for the copied message status
   const [copyStatus, setCopyStatus] = useState("Copy");
 
-  // Scroll to the bottom of the messages container
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  };
+  // custom hook that stores the authentication logic
+  useAuth();
 
-  // Auto-scroll when messages change
+  // custom hook that is responsible for scrolling towards the bottom once the response is
+  // streaming
+  const { messagesEndRef, scrollToBottom } = useAutoScroll();
+
+  // Only set conversation ID if none exists AND we don't have any messages
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(scrollToBottom, 100);
+    if (!currentConversationId && messages.length === 0) {
+      const newConversationId = "chat-" + Date.now();
+      dispatch(setCurrentConversationId(newConversationId));
     }
-  }, [messages]);
+  }, [currentConversationId, messages.length, dispatch]);
 
-  // Auto-scroll when streaming starts
+  // Handle conversation switching and message loading
   useEffect(() => {
-    if (isResponseStreaming) {
-      setTimeout(scrollToBottom, 100);
-    }
-  }, [isResponseStreaming]);
+    let messageUnsubscribe: (() => void) | undefined;
 
-  // Generate new conversation ID when component mounts or when starting new chat
-  useEffect(() => {
-    dispatch(setCurrentConversationId("chat-" + Date.now()));
-  }, []);
-
-  // triggers once the component is mounted on the screen
-  useEffect(() => {
-    // checking the authentication state of the user
-    try {
-      // function that will be triggered when the authentication state changes
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          // User is signed in, set the logged-in user state
-          setLoggedInUser(user);
-
-          // Load messages for current conversation when user logs in
-          if (currentConversationId) {
-            loadConversationMessages(user.uid, currentConversationId);
-          }
-        } else {
-          setLoggedInUser(null);
-          dispatch(setMessages([]));
-        }
-      });
-    } catch {
-      // handling any errors that occur during the authentication state check
-      toast.error(
-        "Error checking authentication state. Please try again later."
+    // When conversation ID changes and we have a logged in user, load the messages
+    if (loggedInUser && currentConversationId) {
+      messageUnsubscribe = loadConversationMessages(
+        loggedInUser.uid,
+        currentConversationId
       );
-      setLoggedInUser(null);
     }
-  }, [currentConversationId]);
+
+    // Return cleanup function
+    return () => {
+      if (messageUnsubscribe) {
+        messageUnsubscribe();
+      }
+    };
+  }, [currentConversationId, loggedInUser]);
 
   // Load conversation messages in real-time
   const loadConversationMessages = (
@@ -148,50 +121,91 @@ export default function Home() {
     );
     const q = query(messagesRef, orderBy("timestamp", "asc"));
 
-    return onSnapshot(q, (snapshot) => {
-      const loadedMessages: any[] = [];
-      snapshot.forEach((doc) => {
-        const messageData = doc.data();
-        loadedMessages.push({
-          id: doc.id,
-          role: messageData.isBot ? "assistant" : messageData.role,
-          content: messageData.content,
-          isComplete: messageData.isComplete,
-          timestamp: messageData.timestamp,
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const loadedMessages: any[] = [];
+        snapshot.forEach((doc) => {
+          const messageData = doc.data();
+          loadedMessages.push({
+            id: doc.id,
+            role: messageData.isBot ? "assistant" : messageData.role,
+            content: messageData.content,
+            isComplete: messageData.isComplete,
+            timestamp:
+              messageData.timestamp?.toDate?.()?.toISOString() ||
+              new Date().toISOString(),
+          });
         });
-      });
-      dispatch(setMessages(loadedMessages));
-    });
+
+        dispatch(setMessages(loadedMessages));
+      },
+      (error) => {
+        // Handle case where conversation doesn't exist yet (new conversation)
+        if (error.code === "permission-denied" || loadedMessages.length === 0) {
+          console.log("No messages found for conversation:", conversationId);
+          dispatch(setMessages([]));
+        } else {
+          console.error("Error loading messages:", error);
+        }
+      }
+    );
   };
 
-  // Create or update conversation metadata
-  async function updateConversationInfo(
+  // CREATE conversation only once when starting new chat
+  async function createNewConversation(
     userUid: string,
     conversationId: string,
-    lastMessage: string,
-    title?: string
+    firstMessage: string
   ) {
-    const conversationRef = doc(
-      db,
-      "users",
-      userUid,
-      "conversations",
-      conversationId
-    );
+    try {
+      const conversationRef = doc(
+        db,
+        "users",
+        userUid,
+        "conversations",
+        conversationId
+      );
 
-    const updateData: any = {
-      lastMessage: lastMessage,
-      lastActivity: serverTimestamp(),
-    };
+      await setDoc(conversationRef, {
+        title:
+          firstMessage.length > 50
+            ? firstMessage.substring(0, 50) + "..."
+            : firstMessage,
+        lastMessage: firstMessage,
+        lastActivity: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
 
-    // Set title only for first message
-    if (title) {
-      updateData.title =
-        title.length > 50 ? title.substring(0, 50) + "..." : title;
-      updateData.createdAt = serverTimestamp();
+      return true;
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      return false;
     }
+  }
 
-    await setDoc(conversationRef, updateData, { merge: true });
+  // UPDATE conversation only when needed (not for every message)
+  async function updateConversationLastMessage(
+    userUid: string,
+    conversationId: string,
+    lastMessage: string
+  ) {
+    try {
+      const conversationRef = doc(
+        db,
+        "users",
+        userUid,
+        "conversations",
+        conversationId
+      );
+
+      await updateDoc(conversationRef, {
+        lastMessage: lastMessage,
+        lastActivity: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error updating conversation:", error);
+    }
   }
 
   // triggers when the user submits a query and this will save the user message
@@ -326,53 +340,62 @@ export default function Home() {
 
     // Cleanup any prior controller
     controllerRef.current?.abort();
-
-    // Set streaming state to true
     dispatch(setIsResponseStreaming(true));
 
     try {
-      // creating a new AbortController instance
       const controller = new AbortController();
-      controllerRef.current = controller; // Store the controller reference
+      controllerRef.current = controller;
 
-      // clearing the current textarea input
+      // Store the current message content before clearing
+      const currentMessageContent = userCurrentMessage.content;
+      const currentMessageObject = { ...userCurrentMessage };
+
+      // Clear the textarea input immediately
       dispatch(
         setUserCurrentMessage({
           role: "user",
-          content: "", // stores the current message from the user
+          content: "",
         })
       );
 
-      // 1. Save user message to Firestore
+      // Check if this is a new conversation (no messages yet)
+      const isNewConversation = messages.length === 0;
+
+      // If it's a new conversation, create the conversation metadata ONLY ONCE
+      if (isNewConversation) {
+        console.log("Creating new conversation:", currentConversationId);
+        const success = await createNewConversation(
+          loggedInUser.uid,
+          currentConversationId,
+          currentMessageContent
+        );
+
+        if (!success) {
+          throw new Error("Failed to create conversation");
+        }
+      }
+
+      // Save user message using the stored content
       await saveUserMessage(
         loggedInUser.uid,
         currentConversationId,
-        userCurrentMessage
+        currentMessageObject
       );
 
-      // 2. Update conversation metadata (set title for first message)
-      const isFirstMessage = messages.length === 0;
-      await updateConversationInfo(
-        loggedInUser.uid,
-        currentConversationId,
-        userCurrentMessage.content,
-        isFirstMessage ? userCurrentMessage.content : undefined
-      );
-
-      // 3. Create empty bot message in Firestore
+      // Create empty bot message
       const botMessageId = await createBotMessage(
         loggedInUser.uid,
         currentConversationId
       );
 
-      // 4. Call OpenAI API
+      // Call API with the stored message
       const response = await fetch("/api/chat", {
         method: "POST",
         body: JSON.stringify({
-          model: userSelectedLLMModelId, // passing the selected model id to an api
-          messages: [...messages, userCurrentMessage],
+          model: userSelectedLLMModelId,
+          messages: [...messages, currentMessageObject], // Use stored message
         }),
-        signal: controller.signal, // attach signal
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
@@ -389,10 +412,9 @@ export default function Home() {
         const { done, value } = await reader?.read();
 
         if (done) {
-          // Stream ended normally
           controllerRef.current = null;
 
-          // Mark bot message as complete in Firestore
+          // Mark bot message as complete
           await updateBotMessage(
             loggedInUser.uid,
             currentConversationId,
@@ -401,8 +423,8 @@ export default function Home() {
             true
           );
 
-          // Update conversation with bot's response
-          await updateConversationInfo(
+          // Update conversation with bot's response (NOT creating new conversation)
+          await updateConversationLastMessage(
             loggedInUser.uid,
             currentConversationId,
             fullResponse
@@ -412,20 +434,14 @@ export default function Home() {
           break;
         }
 
-        // Decode the chunk
         const chunk = decoder.decode(value, { stream: true });
-
         buffer += chunk;
-
-        // Split by lines to handle multiple JSON objects
         const lines = buffer.split("\n");
-
-        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           const trimmedLine = line.trim();
 
-          // Skip empty lines and "data: " prefix if present
           if (
             !trimmedLine ||
             trimmedLine === "data: [DONE]" ||
@@ -434,22 +450,18 @@ export default function Home() {
             continue;
           }
 
-          // Remove "data: " prefix if present
           const jsonStr = trimmedLine.startsWith("data: ")
             ? trimmedLine.slice(6)
             : trimmedLine;
 
           try {
             const parsed = JSON.parse(jsonStr);
-
-            // Extract content from the delta
             const content = parsed.choices?.[0]?.delta?.content || "";
 
             if (content) {
               fullResponse += content;
               updateCount++;
 
-              // Update bot message in Firestore with partial response
               await updateBotMessage(
                 loggedInUser.uid,
                 currentConversationId,
@@ -458,15 +470,12 @@ export default function Home() {
                 false
               );
 
-              // Auto-scroll during streaming (every few updates to avoid too frequent scrolling)
               if (updateCount % 3 === 0) {
                 setTimeout(scrollToBottom, 50);
               }
             }
 
-            // Check if streaming is complete
             if (parsed.choices?.[0]?.finish_reason === "stop") {
-              // Mark as complete in Firestore
               await updateBotMessage(
                 loggedInUser.uid,
                 currentConversationId,
@@ -475,8 +484,8 @@ export default function Home() {
                 true
               );
 
-              // Update conversation metadata
-              await updateConversationInfo(
+              // Update conversation with final response (NOT creating new conversation)
+              await updateConversationLastMessage(
                 loggedInUser.uid,
                 currentConversationId,
                 fullResponse
@@ -491,20 +500,16 @@ export default function Home() {
         }
       }
 
-      // checking if the response is ok
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (err: unknown) {
-      // If the error is an AbortError, we can ignore it
       if (err.name === "AbortError") {
         return;
       }
 
-      // Set streaming state to false on error
       dispatch(setIsResponseStreaming(false));
 
-      // handling any errors that occur during the API call
       if (err instanceof Error) {
         toast.error(
           `Error fetching answer. Please try again later. ${err.message}`
@@ -539,7 +544,6 @@ export default function Home() {
           <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-purple-400 rounded-full opacity-30 animate-pulse delay-1000"></div>
           <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-25 animate-pulse delay-2000"></div>
         </div>
-
         {/* Stores the page content and also the textarea for the user query */}
         <section
           className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-full ${

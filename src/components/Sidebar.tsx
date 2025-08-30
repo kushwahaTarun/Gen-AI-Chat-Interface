@@ -184,12 +184,26 @@ export const SidebarLink = ({
   // Redux dispatch to update the state
   const dispatch = useDispatch();
 
-  // triggers when user clicks on the link and the option is chat
+  const { messages } = useSelector((state: any) => state.chat);
+
+  // Updated handleNewChat function with better ID generation and debugging
   const handleNewChat = () => {
-    // reset the current conversation ID, messages, and streaming state
-    dispatch(setCurrentConversationId("chat-" + Date.now()));
+    // Generate a unique conversation ID similar to AppSidebar
+    const newConversationId =
+      "chat-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+
+    console.log("Sidebar: Starting new chat with ID:", newConversationId);
+    console.log(
+      "Sidebar: Current messages before clear:",
+      messages?.length || 0
+    );
+
+    // Reset the current conversation ID, messages, and streaming state
     dispatch(setMessages([]));
+    dispatch(setCurrentConversationId(newConversationId));
     dispatch(setIsResponseStreaming(false));
+
+    console.log("Sidebar: New chat initiated");
   };
 
   // an object containing your functions

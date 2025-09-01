@@ -30,8 +30,6 @@ export default function AppSidebar() {
   const { conversations, loading, error, deleteConversation } =
     useConversationHistory(loggedInUser);
 
-  console.warn("conversations", conversations);
-
   const data = useSidebar();
 
   // Handle conversation selection

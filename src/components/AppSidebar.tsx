@@ -97,6 +97,11 @@ export default function AppSidebar() {
     },
   ];
 
+  // if user is not logged into the platform we will not be displaying the sidebar
+  if (loggedInUser === null) {
+    return;
+  }
+
   return (
     <Sidebar>
       <SidebarBody className="justify-between gap-10">

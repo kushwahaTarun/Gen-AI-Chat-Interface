@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Mail, Lock, Sparkles, LogIn, Star } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Sparkles, LogIn } from "lucide-react";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -13,9 +13,8 @@ import {
 import { app } from "@/lib/firebase";
 import toast from "react-hot-toast";
 
-// creting a new google provider instance
+// creating a new google provider instance
 const googleProvider = new GoogleAuthProvider();
-
 const githubProvider = new GithubAuthProvider();
 
 // Creating auth instance
@@ -49,7 +48,7 @@ export default function SignInPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       console.log("Google sign-in successful:", user);
-      toast.success("Welcome to Baagdu via Google! 🎉");
+      toast.success("Welcome to Baagdu via Google!");
     } catch (error) {
       console.error("Google sign-in error:", error);
       toast.error("Google sign-in failed. Please try again.");
@@ -65,7 +64,7 @@ export default function SignInPage() {
       const result = await signInWithPopup(auth, githubProvider);
       const user = result.user;
       console.log("GitHub sign-in successful:", user);
-      toast.success("Welcome to Baagdu via GitHub! 🎉");
+      toast.success("Welcome to Baagdu via GitHub!");
     } catch (error) {
       console.error("GitHub sign-in error:", error);
       toast.error("GitHub sign-in failed. Please try again.");
@@ -75,79 +74,58 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-400 via-red-500 to-yellow-500 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute top-1/4 left-1/4 w-64 h-64 bg-orange-400/30 rounded-full blur-3xl animate-bounce"
-          style={{ animationDuration: "3s" }}
-        ></div>
-        <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-pink-400/25 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div
-          className="absolute top-1/2 left-1/2 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl animate-ping delay-2000"
-          style={{ animationDuration: "4s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 left-1/3 w-56 h-56 bg-red-400/25 rounded-full blur-3xl animate-bounce delay-500"
-          style={{ animationDuration: "2.5s" }}
-        ></div>
-      </div>
-
-      {/* Floating geometric shapes */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(8)].map((_, i) => (
-          <div key={i}>
-            <Star
-              className="absolute text-white/40 animate-pulse"
-              size={Math.random() * 12 + 6}
-              style={{
-                left: `${Math.random() * 80 + 10}%`,
-                top: `${Math.random() * 80 + 10}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${1.5 + Math.random() * 2}s`,
-              }}
-            />
-          </div>
-        ))}
+    <div
+      className="w-full min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background: `
+          radial-gradient(ellipse at top, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+          radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+          linear-gradient(135deg, #0a0a0a 0%, #111111 25%, #1a1a1a 50%, #0f0f0f 100%)
+        `,
+      }}
+    >
+      {/* Animated floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-20 animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-purple-400 rounded-full opacity-30 animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-25 animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-blue-300 rounded-full opacity-20 animate-pulse delay-500"></div>
+        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-purple-300 rounded-full opacity-15 animate-pulse delay-1500"></div>
       </div>
 
       {/* Main form container */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 p-6 transform hover:scale-[1.01] transition-all duration-300 relative overflow-hidden">
-          {/* Decorative corner elements */}
-          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-pink-300/50 to-transparent rounded-bl-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-tr from-orange-300/50 to-transparent rounded-tr-3xl"></div>
+        <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-600/30 p-8 transform hover:scale-[1.01] transition-all duration-300 relative overflow-hidden">
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
 
           {/* Logo/Brand section */}
-          <div className="text-center mb-5 relative">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 rounded-3xl mb-2 shadow-xl relative overflow-hidden">
-              <Sparkles
-                className="w-8 h-8 text-white animate-spin"
-                style={{ animationDuration: "4s" }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+          <div className="text-center mb-8 relative z-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl mb-4 shadow-xl border border-slate-600/50 relative overflow-hidden">
+              <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-pulse"></div>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 via-red-600 to-orange-600 bg-clip-text text-transparent mb-1 animate-pulse">
-              Baagdu
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+              Baagdu AI
             </h1>
-            <p className="text-gray-600 text-sm font-medium">Welcome back!</p>
-            <div className="w-12 h-1 bg-gradient-to-r from-pink-500 to-orange-500 mx-auto mt-1 rounded-full"></div>
+            <p className="text-slate-400 text-sm font-medium">Welcome back</p>
+            <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
           </div>
 
           {/* Form */}
-          <div className="space-y-4">
+          <div className="space-y-6 relative z-10">
             {/* Email field */}
             <div className="group">
-              <label className="block text-xs font-bold text-gray-700 mb-1 group-focus-within:text-pink-600 transition-colors">
-                📧 Email Address
+              <label className="block text-sm font-medium text-slate-300 mb-2 group-focus-within:text-blue-400 transition-colors">
+                Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-pink-500 transition-colors" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gradient-to-r from-pink-50 to-orange-50 border-2 border-gray-200 rounded-2xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-pink-200 focus:border-pink-400 transition-all duration-300 font-medium shadow-inner text-sm"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400/50 transition-all duration-300 backdrop-blur-sm"
                   placeholder="your@email.com"
                   required
                 />
@@ -156,45 +134,43 @@ export default function SignInPage() {
 
             {/* Password field */}
             <div className="group">
-              <label className="block text-xs font-bold text-gray-700 mb-1 group-focus-within:text-pink-600 transition-colors">
-                🔒 Password
+              <label className="block text-sm font-medium text-slate-300 mb-2 group-focus-within:text-blue-400 transition-colors">
+                Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-pink-500 transition-colors" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-2.5 bg-gradient-to-r from-pink-50 to-orange-50 border-2 border-gray-200 rounded-2xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-pink-200 focus:border-pink-400 transition-all duration-300 font-medium shadow-inner text-sm"
+                  className="w-full pl-12 pr-12 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400/50 transition-all duration-300 backdrop-blur-sm"
                   placeholder="Enter your password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors p-1 rounded-lg hover:bg-pink-100"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-slate-600/30"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-5 h-5" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Remember me and Forgot password */}
+            {/* Remember me */}
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-pink-500 border-2 border-gray-300 rounded focus:ring-pink-400 focus:ring-2"
+                  className="w-4 h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-blue-500/50 focus:ring-2"
                 />
-                <span className="ml-2 text-gray-600 text-xs font-medium">
-                  Remember me
-                </span>
+                <span className="ml-2 text-slate-400 text-sm">Remember me</span>
               </label>
             </div>
 
@@ -203,7 +179,7 @@ export default function SignInPage() {
               type="button"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full py-2.5 px-6 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white font-bold rounded-2xl shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-pink-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -212,38 +188,35 @@ export default function SignInPage() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center">
-                  <LogIn className="w-4 h-4 mr-2 animate-pulse" />
-                  Sign In to Baagdu! 🚀
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Sign In
                 </div>
               )}
-
-              {/* Button shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 -translate-x-full hover:translate-x-full transition-transform duration-700"></div>
             </button>
 
             {/* Divider */}
-            <div className="relative my-4">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-slate-600/50"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-gray-500 font-medium text-xs">
+                <span className="px-4 bg-slate-800 text-slate-400 font-medium">
                   or continue with
                 </span>
               </div>
             </div>
 
-            {/* Social Auth Buttons - Single Line */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Social Auth Buttons */}
+            <div className="grid grid-cols-2 gap-4">
               {/* Google Sign In */}
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
-                className="py-2.5 px-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold rounded-2xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                className="py-3 px-4 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-600/50 text-slate-200 font-medium rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group backdrop-blur-sm"
               >
                 <div className="flex items-center justify-center">
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -263,7 +236,6 @@ export default function SignInPage() {
                   </svg>
                   <span className="text-sm">Google</span>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-50 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               </button>
 
               {/* GitHub Sign In */}
@@ -271,54 +243,48 @@ export default function SignInPage() {
                 type="button"
                 onClick={handleGithubSignIn}
                 disabled={isLoading}
-                className="py-2.5 px-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-2xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                className="py-3 px-4 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-600/50 text-slate-200 font-medium rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group backdrop-blur-sm"
               >
                 <div className="flex items-center justify-center">
                   <svg
-                    className="w-4 h-4 mr-2 fill-current"
+                    className="w-5 h-5 mr-2 fill-current"
                     viewBox="0 0 24 24"
                   >
                     <path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
                   </svg>
                   <span className="text-sm">GitHub</span>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               </button>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="text-center mt-4">
-            <p className="text-gray-600 text-xs font-medium">
+          <div className="text-center mt-6 relative z-10">
+            <p className="text-slate-400 text-sm">
               Don't have an account?{" "}
-              <button className="text-pink-600 hover:text-pink-700 font-bold transition-colors hover:underline">
-                <Link href="/Signup">Create Account!</Link>
-              </button>
+              <Link
+                href="/Signup"
+                className="text-blue-400 hover:text-blue-300 font-medium transition-colors hover:underline"
+              >
+                Create Account
+              </Link>
             </p>
           </div>
 
           {/* Terms */}
-          <div className="mt-2 text-center">
-            <p className="text-gray-500 text-xs">
+          <div className="mt-4 text-center relative z-10">
+            <p className="text-slate-500 text-xs">
               By signing in, you agree to our{" "}
-              <button className="text-pink-500 hover:text-pink-600 transition-colors hover:underline font-medium">
+              <button className="text-blue-400 hover:text-blue-300 transition-colors hover:underline">
                 Terms
               </button>{" "}
               and{" "}
-              <button className="text-pink-500 hover:text-pink-600 transition-colors hover:underline font-medium">
+              <button className="text-blue-400 hover:text-blue-300 transition-colors hover:underline">
                 Privacy Policy
               </button>
             </p>
           </div>
         </div>
-
-        {/* Additional floating elements */}
-        <div
-          className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-pink-400 to-orange-400 rounded-full animate-bounce shadow-lg"
-          style={{ animationDuration: "2s" }}
-        ></div>
-        <div className="absolute -bottom-2 -left-2 w-5 h-5 bg-gradient-to-br from-yellow-400 to-red-400 rounded-full animate-ping shadow-lg"></div>
-        <div className="absolute top-1/2 -right-1 w-3 h-3 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full animate-pulse shadow-lg"></div>
       </div>
     </div>
   );

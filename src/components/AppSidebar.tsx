@@ -106,7 +106,7 @@ export default function AppSidebar() {
           {/* Logo */}
           <div className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20">
             <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
-            <span className="font-medium text-black dark:text-white whitespace-pre">
+            <span className="font-medium text-black text-lg dark:text-white whitespace-pre">
               Baangdu AI
             </span>
           </div>
@@ -122,7 +122,7 @@ export default function AppSidebar() {
           {data.open && (
             <AnimatePresence>
               <motion.section
-                className="mt-8 flex-1 overflow-y-auto"
+                className="mt-8 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -152,16 +152,16 @@ export default function AppSidebar() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.2 }}
-                        className={`group relative p-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                        className={`group relative p-2 hover:bg-black rounded-lg cursor-pointer transition-all duration-200 ${
                           conversation.id === currentConversationId
                             ? "bg-blue-500/20 border border-blue-500/30"
-                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                            : "hover:bg-neutral-100 dark:hover:bg-black"
                         }`}
                         onClick={() =>
                           handleConversationSelect(conversation.id)
                         }
                       >
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-between justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <h3 className="text-xs font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -184,10 +184,10 @@ export default function AppSidebar() {
                             onClick={(e) =>
                               handleDeleteConversation(conversation.id, e)
                             }
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all ml-2"
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded transition-all ml-2 cursor-pointer"
                             title="Delete conversation"
                           >
-                            <HiOutlineTrash className="w-3 h-3 text-red-500" />
+                            <HiOutlineTrash className="text-base text-red-500" />
                           </button>
                         </div>
                       </motion.div>

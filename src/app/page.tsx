@@ -25,7 +25,6 @@ import useSpeechSynthesis from "@/hooks/useTextToSpeech";
 import useAuth from "@/hooks/useAuth";
 import useAutoScroll from "@/hooks/useAutoScroll";
 import useMessageActions from "@/hooks/useMessageActions";
-import BuyMeACoffeeButtonDirect from "@/components/BuyMeACoffeeButton";
 
 export default function Home() {
   // destructuring the functions from the custom hook
@@ -383,6 +382,19 @@ export default function Home() {
             />
           </div>
         </section>
+        {/* Buy me a coffee button */}
+        <a
+          href="https://www.buymeacoffee.com/tarunkushwaha"
+          target="_blank"
+          className="absolute top-4 right-4"
+        >
+          <Image
+            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+            alt="Buy Me A Coffee"
+            width="125"
+            height="70"
+          />
+        </a>
       </section>
     </>
   );

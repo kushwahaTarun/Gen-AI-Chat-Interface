@@ -1767,7 +1767,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
                 dispatch(setLLMModelDropdownOpen(!llmModelDropdownOpen))
               }
             >
-              <HiCpuChip className="text-lg" />
+              <HiCpuChip className="text-sm md:text-lg" />
 
               {/* Show selected model info */}
               {userSelectedLLMModel !== "openai/gpt-3.5-turbo" && (
@@ -1913,7 +1913,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             {!isListening ? (
               <MdMic
-                className="text-lg cursor-pointer text-gray-400 hover:text-white transition"
+                className="text-base md:text-lg cursor-pointer text-gray-400 hover:text-white transition"
                 title="Start voice recording"
                 onClick={startListening}
               />

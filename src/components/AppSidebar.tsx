@@ -15,6 +15,7 @@ import {
   setCurrentConversationId,
   setMessages,
 } from "@/features/chatInterfaceSlice";
+import configuration from "../../public/configuration.png";
 
 export default function AppSidebar() {
   // Get the current user from Firebase authentication
@@ -108,7 +109,7 @@ export default function AppSidebar() {
         <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
           {/* Logo */}
           <div className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20">
-            <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
+            <Image src={configuration} alt="Platform icon" />
             <span className="font-medium text-black text-lg dark:text-white whitespace-pre">
               Baangdu AI
             </span>

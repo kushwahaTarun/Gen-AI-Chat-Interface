@@ -261,7 +261,7 @@ export default function SignInPage() {
           {/* Footer */}
           <div className="text-center mt-6 relative z-10">
             <p className="text-slate-400 text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/Signup"
                 className="text-blue-400 hover:text-blue-300 font-medium transition-colors hover:underline"

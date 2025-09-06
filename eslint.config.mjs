@@ -23,8 +23,6 @@ const eslintConfig = [
           varsIgnorePattern: "^_",
         },
       ],
-      // Allow implicit any in catch clauses
-      "@typescript-eslint/no-implicit-any-catch": "warn",
       // Allow any in function signatures
       "@typescript-eslint/no-unsafe-function-type": "warn",
       // Allow any in assignments
@@ -35,6 +33,8 @@ const eslintConfig = [
       "@typescript-eslint/no-unsafe-call": "warn",
       // Allow any in returns
       "@typescript-eslint/no-unsafe-return": "warn",
+      // Allow any in arguments
+      "@typescript-eslint/no-unsafe-argument": "warn",
     },
   },
 ];

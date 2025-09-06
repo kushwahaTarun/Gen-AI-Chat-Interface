@@ -1,16 +1,16 @@
 "use client";
 import { cn } from "@/lib/util";
 import React, { createContext, useContext } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { useSelector, useDispatch } from "react-redux";
+import { TbEdit } from "react-icons/tb";
+import { RootState } from "@/store/store";
 
-import {
-  setCurrentConversationId,
-  setMessages,
-  setIsResponseStreaming,
-  setIsSidebarOpen,
-} from "@/features/chatInterfaceSlice";
+import coffee from "../../public/coffee.png";
+import useMessageActions from "@/hooks/useMessageActions";
+import { setIsSidebarOpen } from "@/features/chatInterfaceSlice";
 
 interface Links {
   label: string;
@@ -47,7 +47,7 @@ export const SidebarProvider = ({
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
 }) => {
-  const { isSidebarOpen } = useSelector((state: any) => state.chat);
+  const { isSidebarOpen } = useSelector((state: RootState) => state.chat);
 
   const dispatch = useDispatch();
   const open = openProp !== undefined ? openProp : isSidebarOpen;
@@ -127,19 +127,47 @@ export const MobileSidebar = ({
   ...props
 }: React.ComponentProps<"div">) => {
   const { open, setOpen } = useSidebar();
+  const { messages } = useSelector((state: RootState) => state.chat);
+  const { handleNewChat } = useMessageActions();
   return (
     <>
       <div
         className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden  items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
+          "h-10 px-2 py-4 flex flex-row md:hidden items-center justify-between bg-transparent w-full"
         )}
         {...props}
       >
-        <div className="flex justify-end z-20 w-full">
-          <IconMenu2
-            className="text-neutral-800 dark:text-neutral-200"
-            onClick={() => setOpen(!open)}
-          />
+        <div className="flex justify-between z-20 w-full">
+          <div className="flex items-center">
+            <IconMenu2
+              className="text-neutral-800 dark:text-neutral-200"
+              onMouseOver={() => setOpen(!open)}
+            />
+            <span className="ml-2">BAANGDU</span>
+          </div>
+
+          {messages.length ? (
+            <div className="flex justify-center items-center gap-x-2">
+              {/* Buy me a coffee button */}
+              <a
+                href="https://www.buymeacoffee.com/tarunkushwaha"
+                target="_blank"
+              >
+                <Image
+                  src={coffee}
+                  alt="Buy Me A Coffee"
+                  height="30"
+                  className="h-[24px] w-[22px] p-1 bg-white rounded-[50%]"
+                />
+              </a>
+              {/* New chat button  */}
+              <TbEdit
+                className="text-xl"
+                title="New chat"
+                onClick={handleNewChat}
+              />
+            </div>
+          ) : null}
         </div>
         <AnimatePresence>
           {open && (
@@ -181,30 +209,7 @@ export const SidebarLink = ({
 }) => {
   const { open, animate } = useSidebar();
 
-  // Redux dispatch to update the state
-  const dispatch = useDispatch();
-
-  const { messages } = useSelector((state: any) => state.chat);
-
-  // Updated handleNewChat function with better ID generation and debugging
-  const handleNewChat = () => {
-    // Generate a unique conversation ID similar to AppSidebar
-    const newConversationId =
-      "chat-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
-
-    console.log("Sidebar: Starting new chat with ID:", newConversationId);
-    console.log(
-      "Sidebar: Current messages before clear:",
-      messages?.length || 0
-    );
-
-    // Reset the current conversation ID, messages, and streaming state
-    dispatch(setMessages([]));
-    dispatch(setCurrentConversationId(newConversationId));
-    dispatch(setIsResponseStreaming(false));
-
-    console.log("Sidebar: New chat initiated");
-  };
+  const { handleNewChat } = useMessageActions();
 
   // an object containing your functions
   const functionMap = { handleNewChat };

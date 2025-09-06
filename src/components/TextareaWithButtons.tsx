@@ -1580,7 +1580,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
             }
           }}
           placeholder={placeholder}
-          className="w-full resize-none bg-transparent text-white placeholder-gray-400 p-4 pb-12 pr-4 text-base outline-none"
+          className="w-full resize-none bg-transparent text-white placeholder-gray-400 p-4 pb-12 pr-4 text-md md:text-base outline-none"
           style={{ minHeight: "60px", maxHeight: "250px", lineHeight: "1.5" }}
           rows={2}
         />
@@ -1601,7 +1601,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
               animate={showUploadOptions ? { rotate: 45 } : { rotate: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
             >
-              <IoAttach className="text-xl" />
+              <IoAttach className="text-lg md:text-xl" />
             </motion.div>
 
             {/* File count badge */}
@@ -1767,7 +1767,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
                 dispatch(setLLMModelDropdownOpen(!llmModelDropdownOpen))
               }
             >
-              <HiCpuChip className="text-sm md:text-lg" />
+              <HiCpuChip className="text-lg" />
 
               {/* Show selected model info */}
               {userSelectedLLMModel !== "openai/gpt-3.5-turbo" && (
@@ -1913,7 +1913,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             {!isListening ? (
               <MdMic
-                className="text-base md:text-lg cursor-pointer text-gray-400 hover:text-white transition"
+                className="text-lg cursor-pointer text-gray-400 hover:text-white transition"
                 title="Start voice recording"
                 onClick={startListening}
               />

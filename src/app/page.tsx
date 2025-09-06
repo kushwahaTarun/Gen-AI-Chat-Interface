@@ -102,10 +102,12 @@ export default function Home() {
         </div>
         {/* Stores the page content and also the textarea for the user query */}
         <section
-          className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-full ${
+          className={`flex transition-all duration-500 flex-col items-center justify-evenly md:justify-around relative z-10 w-full ${
             messages.length ? "h-[95%] md:h-[85%]" : "h-screen md:h-[70%]"
           }`}
         >
+
+          {/* <div className="block bg-transparent md:hidden border">Baangdu</div> */}
           {/* Container that stores the icon, headings and the textarea field */}
           {!messages.length && (
             <div className="flex flex-col items-center justify-center text-center">

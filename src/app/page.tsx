@@ -284,10 +284,7 @@ export default function Home() {
                                   delay: 0.3,
                                 }}
                               >
-                                <RotatingIcon
-                                  isRotating={true}
-                                  variant="matrix"
-                                />
+                                <RotatingIcon isRotating={true} />
                               </motion.span>
                             )}
                         </motion.div>
@@ -377,7 +374,6 @@ export default function Home() {
             <TextareaWithButtons
               placeholder="Ask me anything..."
               className="max-w-2xl"
-              disabled={isResponseStreaming}
               isResponseStreaming={isResponseStreaming}
             />
           </div>

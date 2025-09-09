@@ -11,10 +11,11 @@ import {
   setIsResponseStreaming,
   setIsSidebarOpen,
 } from "@/features/chatInterfaceSlice";
+import { RootState } from "@/store/store";
 
 interface Links {
   label: string;
-  clickEvent: string;
+  clickEvent: 'handleNewChat';
   icon: React.JSX.Element | React.ReactNode;
 }
 
@@ -47,16 +48,20 @@ export const SidebarProvider = ({
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
 }) => {
-  const { isSidebarOpen } = useSelector((state: any) => state.chat);
+  const { isSidebarOpen } = useSelector((state: RootState) => state.chat);
 
   const dispatch = useDispatch();
   const open = openProp !== undefined ? openProp : isSidebarOpen;
-  const setOpen =
+  interface SetOpenFunction {
+    (value: boolean | ((prevState: boolean) => boolean)): void;
+  }
+
+  const setOpen: SetOpenFunction =
     setOpenProp !== undefined
       ? setOpenProp
       : (value) => {
           // value can be boolean or a function returning boolean
-          const newValue =
+          const newValue: boolean =
             typeof value === "function" ? value(isSidebarOpen) : value;
           dispatch(setIsSidebarOpen(newValue));
         };
@@ -184,7 +189,7 @@ export const SidebarLink = ({
   // Redux dispatch to update the state
   const dispatch = useDispatch();
 
-  const { messages } = useSelector((state: any) => state.chat);
+  const { messages } = useSelector((state: RootState) => state.chat);
 
   // Updated handleNewChat function with better ID generation and debugging
   const handleNewChat = () => {

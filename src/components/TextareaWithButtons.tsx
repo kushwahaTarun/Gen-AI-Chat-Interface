@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
+import { ModelArchitecture } from "../interfaces/chat";
 import { getAllLLMModels } from "../services";
 import {
   setUserSelectedModel,
@@ -29,6 +30,8 @@ import {
   setAllLLMModels,
 } from "../features/chatInterfaceSlice";
 import useChat from "@/hooks/useChat";
+import { RootState } from "@/store/store";
+import Image from "next/image";
 
 // interface for the props of TextareaWithButtons component
 interface TextareaWithButtonsProps {
@@ -65,7 +68,7 @@ const parseCapabilities = (architecture: any) => {
   if (architecture?.input_modalities?.includes("audio"))
     capabilities.push("audio");
   if (architecture?.input_modalities?.includes("file"))
-    capabilities.push("file");
+      capabilities.push("file");
   return capabilities;
 };
 
@@ -222,7 +225,7 @@ const extractSpecialties = (description: string) => {
   return specialties;
 };
 
-const determineSpeed = (model: any) => {
+const determineSpeed = (model: ModelArchitecture) => {
   if (model.context_length > 500000) return "slow";
   if (
     model.context_length < 50000 ||
@@ -233,8 +236,8 @@ const determineSpeed = (model: any) => {
   return "medium";
 };
 
-const determineQuality = (model: any) => {
-  const prompt = parseFloat(model.pricing?.prompt || 0);
+const determineQuality = (model: ModelArchitecture) => {
+  const prompt = parseFloat(String(model.pricing?.prompt || 0));
   if (prompt > 0.000005) return "premium";
   if (prompt > 0.0000005) return "high";
   return "good";
@@ -251,7 +254,7 @@ const isPopularModel = (id: string) => {
   return popularIds.includes(id);
 };
 
-const processModelData = (model: any) => ({
+const processModelData = (model: ModelArchitecture) => ({
   ...model,
   capabilities: parseCapabilities(model.architecture),
   specialties: extractSpecialties(model.description || ""),
@@ -267,7 +270,7 @@ const ModelCard = ({
   selected,
   onSelect,
 }: {
-  model: any;
+  model: ModelArchitecture;
   index: number;
   selected: boolean;
   onSelect: () => void;
@@ -277,9 +280,9 @@ const ModelCard = ({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const isModelFree = (model: any) => {
+  const isModelFree = (model: ModelArchitecture) => {
     return (
-      (!model.pricing?.prompt || parseFloat(model.pricing.prompt) === 0) &&
+      (!model.pricing?.prompt || parseFloat(String(model.pricing.prompt)) === 0) &&
       (!model.pricing?.completion || parseFloat(model.pricing.completion) === 0)
     );
   };
@@ -288,22 +291,6 @@ const ModelCard = ({
     if (length >= 1000000) return `${(length / 1000000).toFixed(1)}M tokens`;
     if (length >= 1000) return `${(length / 1000).toFixed(0)}K tokens`;
     return `${length} tokens`;
-  };
-
-  const getCapabilityText = (capabilities: string[]) => {
-    const capMap = {
-      text: "Text",
-      image: "Vision",
-      audio: "Audio",
-      file: "Files",
-    };
-
-    return (
-      capabilities
-        ?.map((cap) => capMap[cap as keyof typeof capMap])
-        .filter(Boolean)
-        .join(" + ") || "Text"
-    );
   };
 
   const getInputOutputDetails = (model: any) => {
@@ -395,7 +382,7 @@ const ModelCard = ({
     return description.substring(0, maxLength).trim() + "...";
   };
 
-  const handleMouseEnter = (e: React.MouseEvent) => {
+  const handleMouseEnter = () => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
     }
@@ -426,6 +413,7 @@ const ModelCard = ({
   const ioDetails = getInputOutputDetails(model);
   const pricingDetails = getPricingDetails(model);
   const dataCapabilities = getDataProcessingCapabilities(model);
+console.warn("model", model);
 
   return (
     <>
@@ -842,7 +830,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
     allLLMModels,
     userCurrentMessage,
     llmModelDropdownOpen,
-  } = useSelector((state: any) => state.chat);
+  } = useSelector((state: RootState) => state.chat);
 
   useEffect(() => {
     if (!llmModelDropdownOpen) {
@@ -893,7 +881,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
     };
 
     // Build accepted types string
-    let acceptedTypes = [];
+    const acceptedTypes = [];
     if (config.images) acceptedTypes.push("image/*");
     if (config.videos) acceptedTypes.push("video/*");
     if (config.audio) acceptedTypes.push("audio/*");
@@ -922,7 +910,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const uploadMenuRef = useRef<HTMLDivElement>(null);
-  const speechRecognitionRef = useRef<any>(null);
+  const speechRecognitionRef = useRef<null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Process models when they're fetched
@@ -1214,9 +1202,9 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   };
 
   // triggers when a model is selected from the dropdown
-  const handleModelChange = (m: any) => {
-    dispatch(setUserSelectedModel(m.name));
-    dispatch(setUserSelectedLLMModelId(m.id));
+  const handleModelChange = (model: ModelArchitecture) => {
+    dispatch(setUserSelectedModel(model.name));
+    dispatch(setUserSelectedLLMModelId(model.id));
     dispatch(setLLMModelDropdownOpen(false));
   };
 
@@ -1248,9 +1236,9 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   };
 
   // Helper function to check if model is free
-  const isModelFree = (model: any) => {
+  const isModelFree = (model: ModelArchitecture) => {
     return (
-      (!model.pricing?.prompt || parseFloat(model.pricing.prompt) === 0) &&
+      (!model.pricing?.prompt || parseFloat(String(model.pricing.prompt)) === 0) &&
       (!model.pricing?.completion || parseFloat(model.pricing.completion) === 0)
     );
   };
@@ -1438,7 +1426,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
                             className="relative w-16 h-12 rounded-lg overflow-hidden border border-white/20 hover:border-white/40 transition-all bg-white/5"
                           >
                             {file.type === "image" ? (
-                              <img
+                              <Image
                                 src={file.url}
                                 alt={file.name}
                                 className="w-full h-full object-cover"
@@ -1777,18 +1765,16 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
                   </span>
 
                   {/* Show if it's free */}
-                  {processedModels.find(
-                    (m) => m.name === userSelectedLLMModel
-                  ) &&
-                    isModelFree(
-                      processedModels.find(
-                        (m) => m.name === userSelectedLLMModel
-                      )
-                    ) && (
+                  {(() => {
+                    const model = processedModels.find(
+                      (m) => m.name === userSelectedLLMModel
+                    );
+                    return model && isModelFree(model) ? (
                       <span className="px-1 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
                         FREE
                       </span>
-                    )}
+                    ) : null;
+                  })()}
                 </div>
               )}
             </motion.div>

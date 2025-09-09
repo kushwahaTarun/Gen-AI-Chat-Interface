@@ -6,10 +6,14 @@ import { TbFileExport } from "react-icons/tb";
 import { useExportChat } from "@/hooks/useExportChat";
 
 interface propsType {
-  currentAiResponse: any;
+  currentAiResponse: {
+    [key: string]: string | boolean;
+  };
 }
 
 export default function ExportMsgBtn({ currentAiResponse }: propsType) {
+  console.warn("currentAiResponse", currentAiResponse);
+
   // importing a function from the custom hook
   const { exportToPDF, exportToMarkdown, exportToDocx } = useExportChat();
 

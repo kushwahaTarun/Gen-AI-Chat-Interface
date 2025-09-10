@@ -3,12 +3,11 @@ import { VscFilePdf } from "react-icons/vsc";
 import { BsMarkdown, BsFiletypeDocx } from "react-icons/bs";
 import { TbFileExport } from "react-icons/tb";
 
+import { Message } from "@/interfaces/chat";
 import { useExportChat } from "@/hooks/useExportChat";
 
 interface propsType {
-  currentAiResponse: {
-    [key: string]: string | boolean;
-  };
+  currentAiResponse: Message;
 }
 
 export default function ExportMsgBtn({ currentAiResponse }: propsType) {

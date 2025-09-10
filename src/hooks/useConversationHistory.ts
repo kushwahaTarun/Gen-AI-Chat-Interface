@@ -7,6 +7,7 @@ import {
   deleteDoc, 
   doc,
 } from 'firebase/firestore';
+import {User} from 'firebase/auth';
 import { db } from '@/lib/firebase';
 
 interface Message {
@@ -26,7 +27,8 @@ interface ConversationWithMessages {
   messages: Message[]; // Array of messages within each conversation
 }
 
-export const useConversationHistory = (loggedInUser: any) => {
+export const useConversationHistory = (loggedInUser: User) => {
+  
   const [conversations, setConversations] = useState<ConversationWithMessages[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

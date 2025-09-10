@@ -3,23 +3,26 @@ import toast from "react-hot-toast";
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
+import { Message } from "@/interfaces/chat";
+import { RootState } from "@/store/store";
+
 export const useExportChat = () => {
   // accessing the state from redux
-  const { messages } = useSelector((state: any) => state.chat);
+  const { messages } = useSelector((state: RootState) => state.chat);
 
-  const getUserAndAIMsgToExport = (currentAiResponse: any) => {
+  const getUserAndAIMsgToExport = (currentAiResponse: Message) => {
+    
     return messages.length
-        ? messages.flatMap((botMessage: any, index: number) => {
-            return (
-              botMessage.id == currentAiResponse.id &&
-              [messages[index - 1], botMessage].filter(Boolean)
-            );
-          }).filter(Boolean)
+        ? messages.flatMap((botMessage: Message, index: number) => {
+            return botMessage.id === currentAiResponse.id
+              ? [messages[index - 1], botMessage].filter(Boolean)
+              : [];
+          })
         : []
   }
 
   // triggers once user click on the export button to **export the pdf**
-  const exportToPDF = async (currentAiResponse: any) => {
+  const exportToPDF = async (currentAiResponse: Message) => {
     try {  
       // loading state
        const loadingToastId = toast.loading("Exporting thread...")
@@ -75,7 +78,8 @@ export const useExportChat = () => {
         // Handle long text by splitting into lines
         const lines = pdf.splitTextToSize(message.content, maxWidth);
 
-        lines.forEach((line) => {
+        lines.forEach((line: string) => {
+          
           if (yPosition > pageHeight - 20) {
             pdf.addPage();
             yPosition = 25;
@@ -114,11 +118,11 @@ export const useExportChat = () => {
   };
 
   // triggers when user click on the **export as a markdown** button
-  const exportToMarkdown = (currentAiResponse: any) => {
+  const exportToMarkdown = (currentAiResponse: Message) => {
   try{
 
       // converting the message to export in the markdown format
-      const markdownData = getUserAndAIMsgToExport(currentAiResponse).map((message: any) => {
+      const markdownData = getUserAndAIMsgToExport(currentAiResponse).map((message: Message) => {
         return message.role == "user" ? `**User**: ${message.content}` : `**AI**: ${message.content}`
     }).join("\n\n");
 
@@ -144,7 +148,7 @@ toast.error("Error while downloading markdown")
 }
 
   // triggers when user clicks on the export to docx button
-  const exportToDocx = (currentAiResponse: any) => {
+  const exportToDocx = (currentAiResponse: Message) => {
     const messageToExport= getUserAndAIMsgToExport(currentAiResponse);
     
     // new documen instance

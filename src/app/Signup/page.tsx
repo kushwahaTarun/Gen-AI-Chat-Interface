@@ -25,7 +25,7 @@ export default function BaagduSignUp() {
   const [isLoading, setIsLoading] = useState(false);
 
   // triggers when user clicks on the submit button
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
     // Set loading state to once the api request is initiated
@@ -49,7 +49,6 @@ export default function BaagduSignUp() {
       setIsLoading(false);
     } catch (err) {
       setIsLoading(false);
-      toast.error(`Error: ${err.message}`);
       console.error("Error creating account:", err);
     }
   };

@@ -12,7 +12,7 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { RxSpeakerLoud } from "react-icons/rx";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { coldarkDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { RootState } from "@/store/store";
 
 import SignInPage from "@/app/Signin/page";
@@ -25,6 +25,7 @@ import useSpeechSynthesis from "@/hooks/useTextToSpeech";
 import useAuth from "@/hooks/useAuth";
 import useAutoScroll from "@/hooks/useAutoScroll";
 import useMessageActions from "@/hooks/useMessageActions";
+import { Message } from "@/interfaces/chat";
 
 export default function Home() {
   // destructuring the functions from the custom hook
@@ -133,7 +134,7 @@ export default function Home() {
             <div className="w-full flex-1 overflow-y-auto mb-6 p-4 rounded-xl custom-scrollbar">
               <AnimatePresence mode="popLayout">
                 {/* Messages will show streaming automatically via Firestore listener */}
-                {messages.map((message: any, index: number) => {
+                {messages.map((message: Message, index: number) => {
                   // Create a unique identifier for each message
                   const messageId = message.id || `message-${index}`;
                   const isCurrentlySpeaking = speakingMessageId === messageId;
@@ -284,10 +285,7 @@ export default function Home() {
                                   delay: 0.3,
                                 }}
                               >
-                                <RotatingIcon
-                                  isRotating={true}
-                                  variant="matrix"
-                                />
+                                <RotatingIcon isRotating={true} />
                               </motion.span>
                             )}
                         </motion.div>
@@ -377,7 +375,6 @@ export default function Home() {
             <TextareaWithButtons
               placeholder="Ask me anything..."
               className="max-w-2xl"
-              disabled={isResponseStreaming}
               isResponseStreaming={isResponseStreaming}
             />
           </div>

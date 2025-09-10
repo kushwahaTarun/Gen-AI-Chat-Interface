@@ -14,6 +14,7 @@ import {
 
 import { db } from "@/lib/firebase";
 import {setCurrentConversationId, setMessages} from "@/features/chatInterfaceSlice"
+import {Message} from "@/interfaces/chat";
 
 export default function useConversation() {
 
@@ -69,7 +70,9 @@ export default function useConversation() {
           return onSnapshot(
             q,
             (snapshot) => {
-              const loadedMessages: any[] = [];
+              const loadedMessages: Message[] = [];
+              console.warn("loadedMessages", loadedMessages);
+              
               snapshot.forEach((doc) => {
                 const messageData = doc.data();
                 loadedMessages.push({
@@ -87,7 +90,7 @@ export default function useConversation() {
             },
             (error) => {
               // Handle case where conversation doesn't exist yet (new conversation)
-              if (error.code === "permission-denied" || loadedMessages.length === 0) {
+              if (error.code === "permission-denied") {
                 console.log("No messages found for conversation:", conversationId);
                 dispatch(setMessages([]));
               } else {

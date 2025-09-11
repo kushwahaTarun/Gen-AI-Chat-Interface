@@ -1,3 +1,4 @@
+// TYPE FOR THE USER OR THE AI MESSAGES
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -57,7 +58,7 @@ declare global {
   }
 }
 
-export interface architecture {
+export interface Architecture {
                 modality: string,
                 input_modalities: string[],
                 output_modalities: string[],
@@ -75,7 +76,7 @@ export interface ModelArchitecture {
             context_length: number,
             popular: boolean,
             speed: string,
-            architecture: architecture,
+            architecture: Architecture,
             quality: 'good' | 'high' | 'premium',
             specialties: string[],
             pricing: {
@@ -95,3 +96,22 @@ export interface ModelArchitecture {
             supported_parameters: string[],
             capabilities: string[],
         }
+
+// Interface for uploaded files
+export interface UploadedFile {
+  id: string;
+  file: File;
+  type: "image" | "video" | "document" | "audio" | "other";
+  url: string;
+  name: string;
+  size: string;
+}
+
+// Interface for supported media configuration
+export interface SupportedMedia {
+  images: boolean;
+  videos: boolean;
+  documents: boolean;
+  audio: boolean;
+  acceptedTypes: string;
+}

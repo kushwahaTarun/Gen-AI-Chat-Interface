@@ -1,7 +1,15 @@
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {toast} from "react-hot-toast";
 
 import {SupportedMedia, UploadedFile} from "@/interfaces/chat";
+import {
+  IoImage,
+  IoVideocam,
+  IoDocument,
+} from "react-icons/io5";
+import {
+  MdMic
+} from "react-icons/md";
 
 export default function useFileUpload() {
 
@@ -14,6 +22,17 @@ const [supportedMedia] = useState<SupportedMedia>(
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
+    // Media upload states
+  const [filesCollapsed, setFilesCollapsed] = useState(false);
+
+    // Auto-collapse files when there are more than 4
+    useEffect(() => {
+      if (uploadedFiles.length > 4) {
+        setFilesCollapsed(true);
+      } else if (uploadedFiles.length <= 2) {
+        setFilesCollapsed(false);
+      }
+    }, [uploadedFiles.length]);
 
     // Parse supported media types from ConfigCat string
 function parseSupportedMedia(supportedTypes: string): SupportedMedia {
@@ -54,6 +73,39 @@ function parseSupportedMedia(supportedTypes: string): SupportedMedia {
     const handleDragLeave = (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragOver(false);
+    };
+
+      // Remove uploaded file
+  const removeFile = (fileId: string) => {
+    setUploadedFiles((prev) => {
+      const fileToRemove = prev.find((f) => f.id === fileId);
+      if (fileToRemove) {
+        URL.revokeObjectURL(fileToRemove.url);
+      }
+      return prev.filter((f) => f.id !== fileId);
+    });
+  };
+
+    // Clear all files
+  const clearAllFiles = () => {
+    uploadedFiles.forEach((file) => URL.revokeObjectURL(file.url));
+    setUploadedFiles([]);
+  };
+
+  // Get file type icon and color
+    const getFileIcon = (type: string) => {
+      switch (type) {
+        case "image":
+          return { icon: IoImage, color: "text-green-400" };
+        case "video":
+          return { icon: IoVideocam, color: "text-red-400" };
+        case "audio":
+          return { icon: MdMic, color: "text-purple-400" };
+        case "document":
+          return { icon: IoDocument, color: "text-blue-400" };
+        default:
+          return { icon: IoDocument, color: "text-gray-400" };
+      }
     };
 
     // Handle file upload
@@ -179,6 +231,6 @@ function parseSupportedMedia(supportedTypes: string): SupportedMedia {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     };
     return {
-parseSupportedMedia,handleDragOver, handleDragLeave, handleDrop, supportedMedia, isDragOver, handleFileUpload, uploadedFiles, setUploadedFiles, isUploading, showUploadOptions, setShowUploadOptions
+parseSupportedMedia,handleDragOver, handleDragLeave, handleDrop, supportedMedia, isDragOver, handleFileUpload, uploadedFiles, setUploadedFiles, isUploading, showUploadOptions, setShowUploadOptions, removeFile, clearAllFiles, getFileIcon, filesCollapsed, setFilesCollapsed
     }
 }

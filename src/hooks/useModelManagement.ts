@@ -1,15 +1,30 @@
-import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
 import type { RootState } from "@/store/store";
 import {Architecture, ModelArchitecture} from "../interfaces/chat";
+import {
+  setUserSelectedModel,
+  setUserSelectedLLMModelId,
+  setLLMModelDropdownOpen,
+} from "@/features/chatInterfaceSlice";
 
 export default function useModelManagement() {
 
     // Add these state variables with your other useState declarations
     const [modelSearchQuery, setModelSearchQuery] = useState("");
 
-    const {allLLMModels} = useSelector((state: RootState) => state.chat);
+    // dispatch function to trigger actions
+    const dispatch = useDispatch();
+
+    const {allLLMModels, llmModelDropdownOpen} = useSelector((state: RootState) => state.chat);
+
+      // Clear search query when dropdown closes
+      useEffect(() => {
+        if (!llmModelDropdownOpen) {
+          setModelSearchQuery("");
+        }
+      }, [llmModelDropdownOpen]);
 
     const extractSpecialties = (description: string) => {
       const specialties = [];
@@ -88,6 +103,22 @@ export default function useModelManagement() {
           );
         });
       };
+
+  // triggers when a model is selected from the dropdown
+  const handleModelChange = (model: ModelArchitecture) => {
+    dispatch(setUserSelectedModel(model.name));
+    dispatch(setUserSelectedLLMModelId(model.id));
+    dispatch(setLLMModelDropdownOpen(false));
+  };
+
+  // Helper function to check if model is free
+    const isModelFree = (model: ModelArchitecture) => {
+      return (
+        (!model.pricing?.prompt ||
+          parseFloat(String(model.pricing.prompt)) === 0) &&
+        (!model.pricing?.completion || parseFloat(model.pricing.completion) === 0)
+      );
+    };
 
 // Helper functions for model processing
 const parseCapabilities = (architecture: Architecture) => {
@@ -251,5 +282,7 @@ getFilteredModels,
 modelSearchQuery,
 setModelSearchQuery,
 processedModels,
+handleModelChange,
+isModelFree
 }
 }

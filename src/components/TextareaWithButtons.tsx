@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   MdMic,
@@ -9,7 +9,6 @@ import {
   MdExpandLess,
   MdExpandMore,
 } from "react-icons/md";
-import { HiCpuChip } from "react-icons/hi2";
 import {
   IoAttach,
   IoImage,
@@ -17,29 +16,23 @@ import {
   IoDocument,
   IoCamera,
 } from "react-icons/io5";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { HiCpuChip } from "react-icons/hi2";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
 import ModelCard from "./ModelCard";
-import { ModelArchitecture } from "../interfaces/chat";
 import { getAllLLMModels } from "../services";
 import {
-  setUserSelectedModel,
-  setUserSelectedLLMModelId,
   setUserCurrentMessage,
   setLLMModelDropdownOpen,
   setAllLLMModels,
 } from "../features/chatInterfaceSlice";
-import useChat from "@/hooks/useChat";
 import { RootState } from "@/store/store";
-import {
-  SpeechRecognition,
-  SpeechRecognitionEvent,
-  SpeechRecognitionErrorEvent,
-} from "../interfaces/chat";
 import useModelManagement from "@/hooks/useModelManagement";
 import useFileUpload from "@/hooks/useFileUpload";
+import useMotionVariants from "@/hooks/useMotionVariants";
+import useTextareaOperations from "@/hooks/useTextareaOperations";
 
 // interface for the props of TextareaWithButtons component
 interface TextareaWithButtonsProps {
@@ -57,8 +50,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
   // using dispatch from redux to manage state
   const dispatch = useDispatch();
 
-  // Utility functions and state variable
-  const { stopStream, handleQuerySubmit } = useChat();
+  // utility functions and state variables from custom hooks
   const {
     handleDragOver,
     handleDragLeave,
@@ -67,10 +59,14 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
     isDragOver,
     handleFileUpload,
     uploadedFiles,
-    setUploadedFiles,
     isUploading,
     showUploadOptions,
     setShowUploadOptions,
+    removeFile,
+    clearAllFiles,
+    getFileIcon,
+    filesCollapsed,
+    setFilesCollapsed,
   } = useFileUpload();
 
   // importing the helper functions from useModelManagement
@@ -79,30 +75,29 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
     getFilteredModels,
     modelSearchQuery,
     setModelSearchQuery,
+    handleModelChange,
+    isModelFree,
   } = useModelManagement();
+
+  const { handleSubmit, isListening, startListening, stopListening, stopStreaming } = useTextareaOperations();
+
+  // framer-motion variants
+  const {
+    uploadOptionsVariants,
+    optionItemVariants,
+    dragOverlayVariants,
+    filesContainerVariants,
+  } = useMotionVariants();
 
   // accessing the state from redux
   const { userSelectedLLMModel, userCurrentMessage, llmModelDropdownOpen } =
     useSelector((state: RootState) => state.chat);
 
-  // Clear search query when dropdown closes
-  useEffect(() => {
-    if (!llmModelDropdownOpen) {
-      setModelSearchQuery("");
-    }
-  }, [llmModelDropdownOpen]);
-
-  // state to manage the speech-to-text functionality
-  const [isListening, setIsListening] = useState(false);
-
-  // Media upload states
-  const [filesCollapsed, setFilesCollapsed] = useState(false);
-
   // refs for textarea, dropdown menu and the speech recognition instance
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const uploadMenuRef = useRef<HTMLDivElement>(null);
-  const speechRecognitionRef = useRef<null | SpeechRecognition>(null);
+  // const speechRecognitionRef = useRef<null | SpeechRecognition>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -122,60 +117,6 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
       }
     })();
   }, [dispatch]);
-
-  // Auto-collapse files when there are more than 4
-  useEffect(() => {
-    if (uploadedFiles.length > 4) {
-      setFilesCollapsed(true);
-    } else if (uploadedFiles.length <= 2) {
-      setFilesCollapsed(false);
-    }
-  }, [uploadedFiles.length]);
-
-  // triggers when the component mounts to initialize speech recognition
-  useEffect(() => {
-    const speechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (speechRecognition) {
-      // initializing the speech recognition instance
-      const recognition = new speechRecognition();
-      // setting the language
-      recognition.lang = "en-US";
-      // enabling continuous recognition and interim results
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      // assign the configured recognition instance to the ref
-      speechRecognitionRef.current = recognition;
-
-      if (speechRecognitionRef.current) {
-        speechRecognitionRef.current.onresult = (
-          event: SpeechRecognitionEvent
-        ) => {
-          let text = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            text += event.results[i][0].transcript;
-          }
-          dispatch(
-            setUserCurrentMessage({
-              ...userCurrentMessage,
-              content: text,
-            })
-          ); // update the current message in the state
-        };
-      }
-
-      speechRecognitionRef.current.onend = () => setIsListening(false);
-
-      speechRecognitionRef.current.onerror = (
-        event: SpeechRecognitionErrorEvent
-      ) => {
-        console.error("Speech recognition error:", event.error);
-        setIsListening(false);
-        toast.error("Speech recognition failed. Please try again.");
-      };
-    }
-  }, [dispatch, userCurrentMessage]);
 
   /* auto-height */
   useEffect(() => {
@@ -208,159 +149,6 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
       document.removeEventListener("keydown", esc);
     };
   }, [dispatch]);
-
-  // Remove uploaded file
-  const removeFile = (fileId: string) => {
-    setUploadedFiles((prev) => {
-      const fileToRemove = prev.find((f) => f.id === fileId);
-      if (fileToRemove) {
-        URL.revokeObjectURL(fileToRemove.url);
-      }
-      return prev.filter((f) => f.id !== fileId);
-    });
-  };
-
-  // Clear all files
-  const clearAllFiles = () => {
-    uploadedFiles.forEach((file) => URL.revokeObjectURL(file.url));
-    setUploadedFiles([]);
-  };
-
-  // Get file type icon and color
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "image":
-        return { icon: IoImage, color: "text-green-400" };
-      case "video":
-        return { icon: IoVideocam, color: "text-red-400" };
-      case "audio":
-        return { icon: MdMic, color: "text-purple-400" };
-      case "document":
-        return { icon: IoDocument, color: "text-blue-400" };
-      default:
-        return { icon: IoDocument, color: "text-gray-400" };
-    }
-  };
-
-  // triggers when user clicks on the mic icon
-  const startListening = () => {
-    if (speechRecognitionRef.current && !isListening) {
-      try {
-        speechRecognitionRef.current.start();
-        setIsListening(true);
-      } catch (error) {
-        console.error("Error starting speech recognition:", error);
-        toast.error("Failed to start speech recognition");
-      }
-    }
-  };
-
-  // triggers when user clicks on the stop mic icon
-  const stopListening = () => {
-    if (speechRecognitionRef.current && isListening) {
-      speechRecognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
-
-  // triggers when a model is selected from the dropdown
-  const handleModelChange = (model: ModelArchitecture) => {
-    console.warn("Selected model:", model);
-
-    dispatch(setUserSelectedModel(model.name));
-    dispatch(setUserSelectedLLMModelId(model.id));
-    dispatch(setLLMModelDropdownOpen(false));
-  };
-
-  // triggers when the user clicks on the stop streaming button
-  const stopStreaming = () => {
-    // stop the streaming response
-    stopStream();
-  };
-
-  // handles the submission of the user query
-  const handleSubmit = () => {
-    if (
-      (userCurrentMessage.content.trim() || uploadedFiles.length > 0) &&
-      handleQuerySubmit
-    ) {
-      const userMessage = {
-        ...userCurrentMessage,
-        isComplete: true,
-        attachments: uploadedFiles, // Include uploaded files
-      };
-      dispatch(setUserCurrentMessage(userMessage));
-      handleQuerySubmit();
-      // stop listening the voice recognition once user sends the query
-      stopListening();
-      // Clear uploaded files after sending
-      uploadedFiles.forEach((file) => URL.revokeObjectURL(file.url));
-      setUploadedFiles([]);
-    }
-  };
-
-  // Helper function to check if model is free
-  const isModelFree = (model: ModelArchitecture) => {
-    return (
-      (!model.pricing?.prompt ||
-        parseFloat(String(model.pricing.prompt)) === 0) &&
-      (!model.pricing?.completion || parseFloat(model.pricing.completion) === 0)
-    );
-  };
-
-  // Animation variants
-  const uploadOptionsVariants: Variants = {
-    hidden: { opacity: 0, y: 10, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 25,
-        staggerChildren: 0.05,
-      },
-    },
-    exit: {
-      opacity: 0,
-      y: 10,
-      scale: 0.95,
-      transition: { duration: 0.15 },
-    },
-  };
-
-  const optionItemVariants: Variants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { type: "spring", stiffness: 400, damping: 25 },
-    },
-  };
-
-  const dragOverlayVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { type: "spring", stiffness: 300, damping: 25 },
-    },
-  };
-
-  const filesContainerVariants: Variants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: {
-      opacity: 1,
-      height: "auto",
-      transition: { type: "spring", stiffness: 300, damping: 30 },
-    },
-    exit: {
-      opacity: 0,
-      height: 0,
-      transition: { duration: 0.2 },
-    },
-  };
 
   return (
     <div className={`relative w-full ${className}`}>

@@ -3,13 +3,16 @@ import { VscFilePdf } from "react-icons/vsc";
 import { BsMarkdown, BsFiletypeDocx } from "react-icons/bs";
 import { TbFileExport } from "react-icons/tb";
 
+import { Message } from "@/interfaces/chat";
 import { useExportChat } from "@/hooks/useExportChat";
 
 interface propsType {
-  currentAiResponse: any;
+  currentAiResponse: Message;
 }
 
 export default function ExportMsgBtn({ currentAiResponse }: propsType) {
+  console.warn("currentAiResponse", currentAiResponse);
+
   // importing a function from the custom hook
   const { exportToPDF, exportToMarkdown, exportToDocx } = useExportChat();
 

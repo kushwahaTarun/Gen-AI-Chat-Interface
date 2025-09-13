@@ -6,15 +6,17 @@ import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { useSelector, useDispatch } from "react-redux";
 import { TbEdit } from "react-icons/tb";
-import { RootState } from "@/store/store";
 
 import coffee from "../../public/coffee.png";
 import useMessageActions from "@/hooks/useMessageActions";
-import { setIsSidebarOpen } from "@/features/chatInterfaceSlice";
+import {
+  setIsSidebarOpen,
+} from "@/features/chatInterfaceSlice";
+import { RootState } from "@/store/store";
 
 interface Links {
   label: string;
-  clickEvent: string;
+  clickEvent: 'handleNewChat';
   icon: React.JSX.Element | React.ReactNode;
 }
 
@@ -51,12 +53,16 @@ export const SidebarProvider = ({
 
   const dispatch = useDispatch();
   const open = openProp !== undefined ? openProp : isSidebarOpen;
-  const setOpen =
+  interface SetOpenFunction {
+    (value: boolean | ((prevState: boolean) => boolean)): void;
+  }
+
+  const setOpen: SetOpenFunction =
     setOpenProp !== undefined
       ? setOpenProp
       : (value) => {
           // value can be boolean or a function returning boolean
-          const newValue =
+          const newValue: boolean =
             typeof value === "function" ? value(isSidebarOpen) : value;
           dispatch(setIsSidebarOpen(newValue));
         };

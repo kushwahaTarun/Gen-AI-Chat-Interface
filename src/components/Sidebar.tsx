@@ -9,14 +9,12 @@ import { TbEdit } from "react-icons/tb";
 
 import coffee from "../../public/coffee.png";
 import useMessageActions from "@/hooks/useMessageActions";
-import {
-  setIsSidebarOpen,
-} from "@/features/chatInterfaceSlice";
+import { setIsSidebarOpen } from "@/features/chatInterfaceSlice";
 import { RootState } from "@/store/store";
 
 interface Links {
   label: string;
-  clickEvent: 'handleNewChat';
+  clickEvent: "handleNewChat";
   icon: React.JSX.Element | React.ReactNode;
 }
 

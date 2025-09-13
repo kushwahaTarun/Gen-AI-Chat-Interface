@@ -49,8 +49,7 @@ export default function useMessageActions() {
           dispatch(setMessages([]));
           dispatch(setCurrentConversationId(newConversationId));
           dispatch(setIsResponseStreaming(false));
-      
-          console.log("Sidebar: New chat initiated");
+
         };
 
     return {

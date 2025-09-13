@@ -103,10 +103,12 @@ export default function Home() {
         </div>
         {/* Stores the page content and also the textarea for the user query */}
         <section
-          className={`flex transition-all duration-500 flex-col items-center justify-around relative z-10 w-full ${
-            messages.length ? "h-[85%]" : "h-[70%]"
+          className={`flex transition-all duration-500 flex-col items-center justify-evenly md:justify-around relative z-10 w-full ${
+            messages.length ? "h-[95%] md:h-[85%]" : "h-screen md:h-[70%]"
           }`}
         >
+
+          {/* <div className="block bg-transparent md:hidden border">Baangdu</div> */}
           {/* Container that stores the icon, headings and the textarea field */}
           {!messages.length && (
             <div className="flex flex-col items-center justify-center text-center">
@@ -123,7 +125,7 @@ export default function Home() {
               <h3 className="text-gray-300 text-xl mt-8 font-light">
                 Welcome to Baangdu AI
               </h3>
-              <h1 className="text-white text-5xl mt-4 font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-white text-2xl md:text-5xl mt-2 md:mt-4 font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 How can I help?
               </h1>
             </div>
@@ -152,7 +154,7 @@ export default function Home() {
                       className={`mb-6 w-full flex flex-col items-center`}
                     >
                       <div
-                        className={`flex items-end gap-3 max-w-[60%] w-full ${
+                        className={`flex items-end gap-3 max-w-full md:max-w-[60%] w-full ${
                           message.role === "user"
                             ? "flex-row-reverse justify-start" // User: avatar on right, message on left
                             : "flex-row justify-start" // Assistant: avatar on left, message on right
@@ -168,7 +170,7 @@ export default function Home() {
                             damping: 25,
                             delay: 0.1,
                           }}
-                          className="flex-shrink-0 mb-1"
+                          className="flex-shrink-0 mb-1 hidden md:block"
                         >
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -221,7 +223,7 @@ export default function Home() {
                             damping: 30,
                             mass: 1,
                           }}
-                          className={`inline-block p-4 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer ${
+                          className={`inline-block text-sm md:text-base p-2.5 md:p-4 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer ${
                             message.role === "assistant"
                               ? "bg-gradient-to-br from-slate-800/80 to-slate-900/90 backdrop-blur-sm border border-slate-600/30 text-slate-100 shadow-slate-900/50 rounded-bl-md"
                               : "bg-gradient-to-br from-blue-500/90 to-indigo-600/90 backdrop-blur-sm border border-blue-400/20 text-white shadow-blue-500/30 rounded-br-md"
@@ -294,10 +296,10 @@ export default function Home() {
                       {/* Action buttons positioned below the message */}
                       {message.isComplete && (
                         <section
-                          className={`flex mt-2 max-w-[60%] w-full ${
+                          className={`flex mt-2 max-w-full md:max-w-[60%] w-full ${
                             message.role == "user"
                               ? "justify-end pr-12"
-                              : "justify-start pl-12"
+                              : "justify-start md:pl-12"
                           }`}
                         >
                           {/* Icons on the left side of the response */}
@@ -317,7 +319,9 @@ export default function Home() {
                           </div>
 
                           {/* Icons on the right of the response */}
-                          <div className="flex items-center justify-end space-x-0.5 w-1/2">
+                          <div className={`flex items-center justify-end space-x-0.5 w-1/2 ${
+                              message.role === "user" ? "hidden" : ""
+                            }`}>
                             <span
                               title={copyStatus}
                               className={`hover:bg-gray-800 text-gray-400 hover:text-white p-1.5 rounded`}
@@ -371,7 +375,7 @@ export default function Home() {
           )}
 
           {/* Textarea for user input */}
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-sm md:max-w-2xl">
             <TextareaWithButtons
               placeholder="Ask me anything..."
               className="max-w-2xl"
@@ -380,7 +384,7 @@ export default function Home() {
           </div>
         </section>
         {/* Buy me a coffee button */}
-        <a
+        {/* <a
           href="https://www.buymeacoffee.com/tarunkushwaha"
           target="_blank"
           className="absolute top-4 right-4"
@@ -391,7 +395,7 @@ export default function Home() {
             width="125"
             height="70"
           />
-        </a>
+        </a> */}
       </section>
     </>
   );

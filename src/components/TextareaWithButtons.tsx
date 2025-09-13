@@ -421,7 +421,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
             }
           }}
           placeholder={placeholder}
-          className="w-full resize-none bg-transparent text-white placeholder-gray-400 p-4 pb-12 pr-4 text-base outline-none"
+          className="w-full resize-none bg-transparent text-white placeholder-gray-400 p-4 pb-12 pr-4 text-md md:text-base outline-none"
           style={{ minHeight: "60px", maxHeight: "250px", lineHeight: "1.5" }}
           rows={2}
         />
@@ -442,7 +442,7 @@ const TextareaWithButtons: React.FC<TextareaWithButtonsProps> = ({
               animate={showUploadOptions ? { rotate: 45 } : { rotate: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
             >
-              <IoAttach className="text-xl" />
+              <IoAttach className="text-lg md:text-xl" />
             </motion.div>
 
             {/* File count badge */}
